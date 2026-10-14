@@ -56,31 +56,36 @@ ORCHESTRA is a **promise-aware personal AI**. It translates user requests into e
 ## 3. Responsibility Boundaries
 
 ### 3.1 Intent Interpretation
+
 - **Owner:** Bedrock adapter behind `IntentModel` interface
 - **Input:** User natural language + strict JSON schema
 - **Output:** Proposed structured request (commitments, actions, invariants, ambiguities)
-- **Constraint:** Model output is a *proposal*, not an authorized executable plan
+- **Constraint:** Model output is a _proposal_, not an authorized executable plan
 - **Boundary:** Unit tests use a deterministic fake; live Bedrock tests are separately gated
 
 ### 3.2 Planning
+
 - **Owner:** `packages/domain/src/graph/` and `packages/domain/src/planner/`
 - **Graph:** Kahn's topological sort, O(V+E), deterministic via stable ID sorting
 - **Schedule:** Serial schedule generation scheme, single abstract resource, priority tuple: `(deadline, priorityRank, earliestStart, actionId)`
 - **Limitation:** Heuristic scheduler — does NOT claim global optimality
 
 ### 3.3 Verification & Policy
+
 - **Owner:** `packages/domain/src/verifier/` and `packages/domain/src/policy/`
 - **Independence:** Completely separate from LLM code and execution
 - **Checks:** Graph validity, dependency ordering, hard deadlines, protected windows, approval state, tool schema, authorization, preconditions, idempotency, version consistency
 - **Hard rule:** A plan with ANY hard violation is non-executable
 
 ### 3.4 Execution
+
 - **Owner:** `packages/domain/src/execution/`
 - **State machine:** `proposed → ready → awaitingApproval → running → succeeded | failed | outcomeUnknown`
 - **Idempotency:** Per-key locking / DB uniqueness constraint
 - **Critical rule:** Persist `running` BEFORE calling external tool; never claim success without evidence
 
 ### 3.5 Evidence & Replanning
+
 - **Owner:** `packages/domain/src/evidence/` and replanning module
 - **Commitment status** is derived from evidence records, NOT from model assertions
 - **Replanning:** Creates new plan version with parent link; preserves completed work; lexicographic candidate scoring
@@ -104,22 +109,22 @@ orchestra/
 
 ## 5. Technology Stack
 
-| Component | Technology | Version Strategy |
-|---|---|---|
-| Runtime | Node.js LTS | Pinned in `.nvmrc` |
-| Package Manager | pnpm | Committed lockfile |
-| Language | TypeScript (strict) | Pinned |
-| Backend | Fastify | Pinned |
-| Frontend | React + Vite | Pinned |
-| MCP Server | Official TS MCP SDK | Streamable HTTP, spec ≥2025-11-25 |
-| Validation | Zod | Runtime schema validation |
-| Persistence | SQLite (better-sqlite3) | Local demo |
-| AI | Amazon Bedrock | Configurable region/model |
-| Test (Unit) | Vitest | Pinned |
-| Test (E2E) | Playwright | Pinned |
-| Logging | Pino | Structured JSON |
-| Formatting | Prettier | Pinned |
-| Linting | ESLint (TS rules) | Pinned |
+| Component       | Technology              | Version Strategy                  |
+| --------------- | ----------------------- | --------------------------------- |
+| Runtime         | Node.js LTS             | Pinned in `.nvmrc`                |
+| Package Manager | pnpm                    | Committed lockfile                |
+| Language        | TypeScript (strict)     | Pinned                            |
+| Backend         | Fastify                 | Pinned                            |
+| Frontend        | React + Vite            | Pinned                            |
+| MCP Server      | Official TS MCP SDK     | Streamable HTTP, spec ≥2025-11-25 |
+| Validation      | Zod                     | Runtime schema validation         |
+| Persistence     | SQLite (better-sqlite3) | Local demo                        |
+| AI              | Amazon Bedrock          | Configurable region/model         |
+| Test (Unit)     | Vitest                  | Pinned                            |
+| Test (E2E)      | Playwright              | Pinned                            |
+| Logging         | Pino                    | Structured JSON                   |
+| Formatting      | Prettier                | Pinned                            |
+| Linting         | ESLint (TS rules)       | Pinned                            |
 
 ## 6. Data Flow
 
@@ -154,11 +159,13 @@ Replanning ─── preserves completed, reschedules affected ──→ New Pla
 ## 7. Hackathon Compliance
 
 ### Alexa+ Track
+
 - **MCP Server:** Self-hosted, Streamable HTTP transport, official TS SDK
 - **Protocol Version:** MCP spec `2025-11-25` or later (verified against SDK)
 - **Tools:** 9 domain tools with strict schemas (Section 6.1)
 
 ### AWS Builder Mini-Challenge
+
 - **Service:** Amazon Bedrock for intent interpretation
 - **Integration:** Real SDK calls, configurable region/model, proper credential chain
 - **Fallback:** Explicit error when Bedrock unavailable — never fabricate LLM response
@@ -173,33 +180,33 @@ Replanning ─── preserves completed, reschedules affected ──→ New Pla
 
 ## 9. Risks & Ambiguities
 
-| Risk | Mitigation |
-|---|---|
-| Bedrock model availability/latency | Bounded retries, explicit error, no silent fallback |
-| MCP SDK version compatibility | Pin SDK, verify protocol version at startup |
-| Schedule not globally optimal | Document limitation in UI and README |
+| Risk                                 | Mitigation                                               |
+| ------------------------------------ | -------------------------------------------------------- |
+| Bedrock model availability/latency   | Bounded retries, explicit error, no silent fallback      |
+| MCP SDK version compatibility        | Pin SDK, verify protocol version at startup              |
+| Schedule not globally optimal        | Document limitation in UI and README                     |
 | Exactly-once side effects impossible | Document limitation; use idempotency keys where possible |
-| Hackathon rules may change | Re-check Devpost before submission |
-| Time pressure (deadline Oct 23) | Prioritize core algorithms + MCP + one working scenario |
+| Hackathon rules may change           | Re-check Devpost before submission                       |
+| Time pressure (deadline Oct 23)      | Prioritize core algorithms + MCP + one working scenario  |
 
 ## 10. Implementation Sequence
 
-| Phase | Prompt | Focus |
-|---|---|---|
-| 0 | Reconnaissance | ✅ This document |
-| 1 | Workspace | Monorepo, TS, linting, CI |
-| 2 | Schemas | Domain types, Zod, typed errors |
-| 3 | Graph | Kahn's toposort, cycle detection |
-| 4 | Scheduler | Serial schedule, risk engine |
-| 5 | Verifier | Independent plan verification, policy |
-| 6 | Persistence | SQLite, events, concurrency |
-| 7 | Executor | State machine, adapters, fault injection |
-| 8 | Intent | Bedrock integration, mocked tests |
-| 9 | Replanning | Event-driven, versioned, diff |
-| 10 | Evidence | Commitment status from evidence |
-| 11 | MCP | Real MCP server, smoke test |
-| 12 | UI | React studio, all views |
-| 13 | Logging | Structured logs, redaction, tracing |
-| 14 | Benchmark | Baseline comparison |
-| 15 | Security | Hardening, fault injection |
-| 16 | Release | Clean-checkout verification |
+| Phase | Prompt         | Focus                                    |
+| ----- | -------------- | ---------------------------------------- |
+| 0     | Reconnaissance | ✅ This document                         |
+| 1     | Workspace      | Monorepo, TS, linting, CI                |
+| 2     | Schemas        | Domain types, Zod, typed errors          |
+| 3     | Graph          | Kahn's toposort, cycle detection         |
+| 4     | Scheduler      | Serial schedule, risk engine             |
+| 5     | Verifier       | Independent plan verification, policy    |
+| 6     | Persistence    | SQLite, events, concurrency              |
+| 7     | Executor       | State machine, adapters, fault injection |
+| 8     | Intent         | Bedrock integration, mocked tests        |
+| 9     | Replanning     | Event-driven, versioned, diff            |
+| 10    | Evidence       | Commitment status from evidence          |
+| 11    | MCP            | Real MCP server, smoke test              |
+| 12    | UI             | React studio, all views                  |
+| 13    | Logging        | Structured logs, redaction, tracing      |
+| 14    | Benchmark      | Baseline comparison                      |
+| 15    | Security       | Hardening, fault injection               |
+| 16    | Release        | Clean-checkout verification              |
