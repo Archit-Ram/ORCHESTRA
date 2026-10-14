@@ -24,7 +24,7 @@ integrations, no hardcoded "pass" results, no unimplemented algorithm
 represented as complete, and no test described as passed unless it was
 actually run and its result recorded.
 
-------------------------------------------------------------------------
+---
 
 # 0. Instructions to the coding AI
 
@@ -84,7 +84,7 @@ unblocked.
 
 Do not say "everything works" based only on code inspection.
 
-------------------------------------------------------------------------
+---
 
 # 1. Problem statement
 
@@ -168,7 +168,7 @@ happened.
 The simulator is a test environment, not a fake production integration.
 Its UI and logs must identify the environment as `simulator`.
 
-------------------------------------------------------------------------
+---
 
 # 2. Solution overview
 
@@ -230,7 +230,7 @@ Before submission, re-check the official rules and FAQs: -
 https://amazonappdev2026.devpost.com/rules -
 https://amazonappdev2026.devpost.com/details/faqs
 
-------------------------------------------------------------------------
+---
 
 # 3. Required technology and repository structure
 
@@ -238,32 +238,32 @@ https://amazonappdev2026.devpost.com/details/faqs
 
 Use a TypeScript-first monorepo to reduce integration overhead.
 
--   **Runtime:** Node.js LTS, pinned in `.nvmrc` or equivalent.
--   **Package manager:** pnpm with a committed lockfile.
--   **MCP server:** official TypeScript MCP SDK, Streamable HTTP
-    transport, version compatible with MCP spec `2025-11-25` or later.
--   **Backend API:** Node.js with Fastify or the simplest well-supported
-    HTTP framework already present in the repository. Do not add both
-    Express and Fastify.
--   **Frontend:** React + TypeScript + Vite.
--   **Validation:** Zod or an equivalent runtime schema validator.
--   **Persistence:** SQLite for a simple local demo, with a repository
-    abstraction. If DynamoDB is selected for a documented AWS
-    integration, implement it genuinely and retain a testable local
-    repository adapter.
--   **AI:** Amazon Bedrock using a currently supported model and SDK.
-    Model ID must be configured, not scattered through code.
--   **Scheduling algorithm:** deterministic TypeScript implementation
-    for the scoped v1 problem. Do not add OR-Tools unless the actual
-    requirement expands beyond the specified algorithm and the reason is
-    documented.
--   **Testing:** Vitest for unit/integration tests; Playwright for
-    browser end-to-end tests.
--   **Logging:** structured JSON logs using Pino or another maintained
-    structured logger.
--   **Formatting/linting:** Prettier and ESLint with TypeScript rules.
--   **API contract:** JSON Schema/OpenAPI for HTTP endpoints and MCP
-    tool schemas.
+- **Runtime:** Node.js LTS, pinned in `.nvmrc` or equivalent.
+- **Package manager:** pnpm with a committed lockfile.
+- **MCP server:** official TypeScript MCP SDK, Streamable HTTP
+  transport, version compatible with MCP spec `2025-11-25` or later.
+- **Backend API:** Node.js with Fastify or the simplest well-supported
+  HTTP framework already present in the repository. Do not add both
+  Express and Fastify.
+- **Frontend:** React + TypeScript + Vite.
+- **Validation:** Zod or an equivalent runtime schema validator.
+- **Persistence:** SQLite for a simple local demo, with a repository
+  abstraction. If DynamoDB is selected for a documented AWS
+  integration, implement it genuinely and retain a testable local
+  repository adapter.
+- **AI:** Amazon Bedrock using a currently supported model and SDK.
+  Model ID must be configured, not scattered through code.
+- **Scheduling algorithm:** deterministic TypeScript implementation
+  for the scoped v1 problem. Do not add OR-Tools unless the actual
+  requirement expands beyond the specified algorithm and the reason is
+  documented.
+- **Testing:** Vitest for unit/integration tests; Playwright for
+  browser end-to-end tests.
+- **Logging:** structured JSON logs using Pino or another maintained
+  structured logger.
+- **Formatting/linting:** Prettier and ESLint with TypeScript rules.
+- **API contract:** JSON Schema/OpenAPI for HTTP endpoints and MCP
+  tool schemas.
 
 Versions must be selected together and committed in lockfiles. Do not
 use floating dependency versions in the final build.
@@ -272,7 +272,7 @@ use floating dependency versions in the final build.
 
 Use this structure unless an existing repository has a sound equivalent:
 
-``` text
+```text
 orchestra/
 ├── apps/
 │   └── studio/
@@ -335,24 +335,24 @@ a directory when its first real module is implemented.
 
 ## 3.3 Naming conventions
 
--   Variables, functions, methods, JSON fields: `lowerCamelCase`.
--   Classes, interfaces, TypeScript types: `PascalCase`.
--   Environment variables: `UPPER_SNAKE_CASE`.
--   Enum values and persisted status values: documented string literals
-    such as `awaitingApproval`.
--   Filenames: `kebab-case.ts` where framework conventions allow.
--   Boolean names should read naturally: `isFeasible`, `hasApproval`,
-    `requiresApproval`.
--   Functions should use verbs: `buildCommitmentGraph`, `validatePlan`,
-    `recordEvidence`.
--   Avoid ambiguous names such as `data`, `obj`, `manager`,
-    `processThing`, `doWork`, and `handle`.
--   Do not use single-letter names except conventional small loop
-    indices where clarity is unaffected.
--   Every exported public function must have a typed input/output and a
-    concise doc comment explaining non-obvious behavior.
+- Variables, functions, methods, JSON fields: `lowerCamelCase`.
+- Classes, interfaces, TypeScript types: `PascalCase`.
+- Environment variables: `UPPER_SNAKE_CASE`.
+- Enum values and persisted status values: documented string literals
+  such as `awaitingApproval`.
+- Filenames: `kebab-case.ts` where framework conventions allow.
+- Boolean names should read naturally: `isFeasible`, `hasApproval`,
+  `requiresApproval`.
+- Functions should use verbs: `buildCommitmentGraph`, `validatePlan`,
+  `recordEvidence`.
+- Avoid ambiguous names such as `data`, `obj`, `manager`,
+  `processThing`, `doWork`, and `handle`.
+- Do not use single-letter names except conventional small loop
+  indices where clarity is unaffected.
+- Every exported public function must have a typed input/output and a
+  concise doc comment explaining non-obvious behavior.
 
-------------------------------------------------------------------------
+---
 
 # 4. Domain model and data contracts
 
@@ -364,15 +364,9 @@ returned by a model.
 
 A commitment represents an outcome the user cares about.
 
-``` ts
+```ts
 type CommitmentStatus =
-  | "open"
-  | "atRisk"
-  | "blocked"
-  | "fulfilled"
-  | "failed"
-  | "cancelled"
-  | "unknown";
+  "open" | "atRisk" | "blocked" | "fulfilled" | "failed" | "cancelled" | "unknown";
 
 interface Commitment {
   commitmentId: string;
@@ -398,7 +392,7 @@ are deterministic.
 
 ## 4.2 Action
 
-``` ts
+```ts
 type ActionStatus =
   | "proposed"
   | "ready"
@@ -440,7 +434,7 @@ external API.
 An invariant is a rule that must remain true for the relevant plan or
 execution state.
 
-``` ts
+```ts
 interface Invariant {
   invariantId: string;
   description: string;
@@ -462,17 +456,13 @@ JavaScript expressions or model-generated code as policy.
 
 ## 4.4 Evidence
 
-``` ts
+```ts
 interface EvidenceRecord {
   evidenceId: string;
   subjectType: "commitment" | "action";
   subjectId: string;
   evidenceType:
-    | "providerResponse"
-    | "stateTransition"
-    | "userApproval"
-    | "simulatorEvent"
-    | "userConfirmation";
+    "providerResponse" | "stateTransition" | "userApproval" | "simulatorEvent" | "userConfirmation";
   source: string;
   observedAt: string;
   correlationId: string;
@@ -490,7 +480,7 @@ access rules.
 
 ## 4.5 Plan
 
-``` ts
+```ts
 interface ExecutionPlan {
   planId: string;
   planVersion: number;
@@ -510,7 +500,7 @@ and benchmark replay.
 
 ## 4.6 Plan verification result
 
-``` ts
+```ts
 interface PlanVerificationResult {
   isValid: boolean;
   violations: ConstraintViolation[];
@@ -534,18 +524,18 @@ any hard violation must not execute.
 
 ## 4.7 Time and identity rules
 
--   Store timestamps in UTC ISO-8601 format; preserve the user's IANA
-    timezone separately for display and local-time interpretation.
--   Reject ambiguous local timestamps unless a timezone is supplied or
-    safely resolved by a documented rule.
--   Use server-generated IDs and idempotency keys. Never use
-    user-visible titles as identifiers.
--   Use optimistic concurrency or version checks when updating
-    plans/actions.
--   Treat all user input and model output as untrusted input.
--   Validate every external payload before it enters the domain layer.
+- Store timestamps in UTC ISO-8601 format; preserve the user's IANA
+  timezone separately for display and local-time interpretation.
+- Reject ambiguous local timestamps unless a timezone is supplied or
+  safely resolved by a documented rule.
+- Use server-generated IDs and idempotency keys. Never use
+  user-visible titles as identifiers.
+- Use optimistic concurrency or version checks when updating
+  plans/actions.
+- Treat all user input and model output as untrusted input.
+- Validate every external payload before it enters the domain layer.
 
-------------------------------------------------------------------------
+---
 
 # 5. Algorithms --- required real implementations
 
@@ -562,8 +552,7 @@ request.
 the configured Bedrock model. 2. Require the model to return
 commitments, proposed actions, deadlines, dependencies, invariants,
 approval requirements, and unresolved ambiguities. 3. Parse the response
-as JSON. Reject malformed output. 4. Validate it using runtime schemas.
-5. Validate references: every dependency/invariant ID must resolve;
+as JSON. Reject malformed output. 4. Validate it using runtime schemas. 5. Validate references: every dependency/invariant ID must resolve;
 reject duplicate IDs and invalid cycles. 6. Normalize timestamps and
 units. 7. Preserve an `ambiguities` list. If an ambiguity changes
 safety, authorization, recipient, or deadline feasibility, ask the user
@@ -622,8 +611,8 @@ Use a deterministic serial schedule generation scheme:
     times.
 4.  A task is eligible only when all dependencies are scheduled.
 5.  For each eligible task, calculate:
-    -   `earliestStart = max(releaseTime, endTime of all dependencies)`.
-    -   `earliestFinish = earliestStart + duration`.
+    - `earliestStart = max(releaseTime, endTime of all dependencies)`.
+    - `earliestFinish = earliestStart + duration`.
 6.  Choose the eligible task with the smallest tuple:
     `(deadlineAt or +infinity, priorityRank, earliestStart, actionId)`.
     Use a documented priority mapping, e.g. critical before high before
@@ -736,12 +725,10 @@ Additional transitions may include `cancelled` and
 `compensationRequired`. Define and test every permitted transition.
 Reject illegal transitions.
 
-Execution sequence: 1. Load the current action and verify its version.
-2. Acquire a per-idempotency-key lock or use a database uniqueness
+Execution sequence: 1. Load the current action and verify its version. 2. Acquire a per-idempotency-key lock or use a database uniqueness
 constraint to prevent concurrent duplicate execution. 3. Re-check
 policy, approval, preconditions, and current plan version immediately
-before execution. 4. Persist `running` before calling the external tool.
-5. Call the adapter with the idempotency key where supported. 6. Persist
+before execution. 4. Persist `running` before calling the external tool. 5. Call the adapter with the idempotency key where supported. 6. Persist
 the sanitized provider result and evidence record. 7. Mark `succeeded`
 only when the result meets the adapter's success contract. 8. On a
 definite rejection, mark `failed`. 9. On timeout/connection loss after a
@@ -793,16 +780,16 @@ region" algorithm that silently skips dependencies.
 A commitment is `fulfilled` only when all mandatory success criteria
 have evidence meeting their declared evidence requirements.
 
--   `open`: work has not started and no risk has been detected.
--   `atRisk`: current data predicts possible deadline/constraint
-    failure.
--   `blocked`: a required dependency or authorization is unavailable.
--   `fulfilled`: all required criteria have sufficient positive
-    evidence.
--   `failed`: a required criterion has definite failure or an
-    unrecoverable deadline is missed.
--   `cancelled`: explicitly cancelled by the user or authorized policy.
--   `unknown`: evidence is insufficient or contradictory.
+- `open`: work has not started and no risk has been detected.
+- `atRisk`: current data predicts possible deadline/constraint
+  failure.
+- `blocked`: a required dependency or authorization is unavailable.
+- `fulfilled`: all required criteria have sufficient positive
+  evidence.
+- `failed`: a required criterion has definite failure or an
+  unrecoverable deadline is missed.
+- `cancelled`: explicitly cancelled by the user or authorized policy.
+- `unknown`: evidence is insufficient or contradictory.
 
 Never infer fulfillment from an action's planned status. Do not change
 `unknown` to `fulfilled` just to make the UI look successful.
@@ -826,7 +813,7 @@ aggregation script, and limitations. Do not cherry-pick only favorable
 cases. The baseline and ORCHESTRA must have equivalent tools and
 equivalent initial information.
 
-------------------------------------------------------------------------
+---
 
 # 6. MCP tool design and external adapters
 
@@ -862,7 +849,7 @@ Keep these concepts separate.
 
 Define an interface such as:
 
-``` ts
+```ts
 interface ActionAdapter<TInput, TResult> {
   toolName: string;
   inputSchema: unknown;
@@ -875,9 +862,7 @@ interface ActionAdapter<TInput, TResult> {
 Use generics and runtime schemas appropriately; do not leave `unknown`
 unvalidated at the actual boundary.
 
-Implement: 1. A real simulator adapter for deterministic demo scenarios.
-2. At most one real external integration if time and credentials permit.
-3. An adapter registry that rejects duplicate tool names and validates
+Implement: 1. A real simulator adapter for deterministic demo scenarios. 2. At most one real external integration if time and credentials permit. 3. An adapter registry that rejects duplicate tool names and validates
 input/output. 4. Integration tests for each live adapter, marked as
 credential-dependent.
 
@@ -900,7 +885,7 @@ asking the user to retry; it must not silently fabricate an LLM
 response. - A test using a mocked SDK client for deterministic unit
 coverage, plus a separate optional live integration test.
 
-------------------------------------------------------------------------
+---
 
 # 7. Logging, tracing, and diagnostics
 
@@ -940,7 +925,7 @@ stable error code and safe contextual fields.
 
 ## 7.3 Example log
 
-``` json
+```json
 {
   "timestamp": "2026-10-13T08:30:00.000Z",
   "level": "warn",
@@ -965,12 +950,12 @@ generated IDs. Do not hardcode these values.
 
 ## 7.4 Log levels
 
--   `debug`: detailed development-only diagnostics; never secrets.
--   `info`: normal state transitions and successful operations.
--   `warn`: recoverable problems, risk changes, retries, or uncertain
-    outcomes.
--   `error`: operation failed and needs investigation.
--   `fatal`: process cannot safely continue.
+- `debug`: detailed development-only diagnostics; never secrets.
+- `info`: normal state transitions and successful operations.
+- `warn`: recoverable problems, risk changes, retries, or uncertain
+  outcomes.
+- `error`: operation failed and needs investigation.
+- `fatal`: process cannot safely continue.
 
 Do not log every polling tick or every internal loop iteration at
 `info`. Use sampling or debug logs for noisy paths.
@@ -995,7 +980,7 @@ Provide an execution timeline in the UI, and a CLI or API path to
 retrieve the trace by `correlationId`. A failure must show the stage and
 stable error code.
 
-------------------------------------------------------------------------
+---
 
 # 8. Error handling and resilience
 
@@ -1018,26 +1003,26 @@ fields are removed.
 
 ## 8.2 Retry policy
 
--   Retry only transient errors.
--   Use bounded retries, exponential backoff, and jitter.
--   Respect provider `Retry-After` headers where applicable.
--   Do not retry authorization errors, invalid input, schema errors, or
-    policy denials.
--   Do not blindly retry a side-effecting action after a timeout. Mark
-    `outcomeUnknown` and reconcile first.
--   Add circuit breaking only if there is a concrete need; do not add
-    complexity without tests.
+- Retry only transient errors.
+- Use bounded retries, exponential backoff, and jitter.
+- Respect provider `Retry-After` headers where applicable.
+- Do not retry authorization errors, invalid input, schema errors, or
+  policy denials.
+- Do not blindly retry a side-effecting action after a timeout. Mark
+  `outcomeUnknown` and reconcile first.
+- Add circuit breaking only if there is a concrete need; do not add
+  complexity without tests.
 
 ## 8.3 Persistence failures
 
--   If a state transition cannot be persisted, do not report it as
-    committed.
--   If an external action may have occurred but its result could not be
-    persisted, use reconciliation and `outcomeUnknown`.
--   Use database transactions and uniqueness constraints for state
-    updates and idempotency records.
--   Test process restart during `running`, after provider success but
-    before persistence, and during replanning.
+- If a state transition cannot be persisted, do not report it as
+  committed.
+- If an external action may have occurred but its result could not be
+  persisted, use reconciliation and `outcomeUnknown`.
+- Use database transactions and uniqueness constraints for state
+  updates and idempotency records.
+- Test process restart during `running`, after provider success but
+  before persistence, and during replanning.
 
 ## 8.4 Frontend errors
 
@@ -1055,7 +1040,7 @@ not swallow exceptions. Graceful shutdown should stop accepting new
 work, finish or safely mark in-flight work, flush logs, and close
 persistence connections.
 
-------------------------------------------------------------------------
+---
 
 # 9. Security and authorization requirements
 
@@ -1085,7 +1070,7 @@ persistence connections.
     tool results, replayed approvals, duplicate actions, compromised
     credentials, and unauthorized tool calls.
 
-------------------------------------------------------------------------
+---
 
 # 10. API and UI requirements
 
@@ -1128,21 +1113,21 @@ authentication/authorization where the deployment requires it.
 
 ## 10.3 Design requirements
 
--   Premium, coherent, accessible interface; restrained dark palette
-    with high contrast and a clear risk color system.
--   Do not make decoration more prominent than the plan and its
-    evidence.
--   Every risk color must also have text/icon semantics for
-    accessibility.
--   Keyboard navigation and visible focus states.
--   Loading, empty, error, and success states for every major view.
--   Show `SIMULATOR` or `LIVE INTEGRATION` visibly.
--   Do not display a green success state until the backend returns
-    verified evidence.
--   The plan graph must be usable with keyboard/list alternatives; do
-    not make all critical information visual-only.
+- Premium, coherent, accessible interface; restrained dark palette
+  with high contrast and a clear risk color system.
+- Do not make decoration more prominent than the plan and its
+  evidence.
+- Every risk color must also have text/icon semantics for
+  accessibility.
+- Keyboard navigation and visible focus states.
+- Loading, empty, error, and success states for every major view.
+- Show `SIMULATOR` or `LIVE INTEGRATION` visibly.
+- Do not display a green success state until the backend returns
+  verified evidence.
+- The plan graph must be usable with keyboard/list alternatives; do
+  not make all critical information visual-only.
 
-------------------------------------------------------------------------
+---
 
 # 11. Test strategy and release gates
 
@@ -1188,7 +1173,7 @@ A passing suite is evidence, not a mathematical proof that no bugs
 exist. The release report must say what was tested and what remains
 unverified.
 
-------------------------------------------------------------------------
+---
 
 # 12. Step-by-step coding prompts
 
@@ -1696,7 +1681,7 @@ fixed or explicitly block release.
 **Acceptance gate:** A clean-checkout release report exists, all
 critical gates pass, and no unsupported claims remain.
 
-------------------------------------------------------------------------
+---
 
 # 13. Final end-to-end acceptance scenarios
 
@@ -1890,7 +1875,7 @@ Metric calculations are tested independently. - Raw data and aggregation
 code are saved. - The report includes limitations and no invented
 scores.
 
-------------------------------------------------------------------------
+---
 
 # 14. Final release checklist
 
@@ -1898,59 +1883,59 @@ Do not call the project ready until each applicable item is evidenced.
 
 ## Product and algorithm
 
--   [ ] Natural-language request becomes validated typed data.
--   [ ] Graph validation detects cycles and missing dependencies.
--   [ ] Scheduler is deterministic and documents its limitations.
--   [ ] Deadline slack and risk labels are computed from actual data.
--   [ ] Independent verifier checks all required invariants.
--   [ ] Approval is bound to the exact action payload and plan version.
--   [ ] Executor implements legal state transitions and idempotency.
--   [ ] Ambiguous side effects remain `outcomeUnknown` until reconciled.
--   [ ] Replanning creates a new version and a correct diff.
--   [ ] Commitment status depends on evidence, not on model assertions.
--   [ ] Baseline comparison runs from reproducible scenarios.
+- [ ] Natural-language request becomes validated typed data.
+- [ ] Graph validation detects cycles and missing dependencies.
+- [ ] Scheduler is deterministic and documents its limitations.
+- [ ] Deadline slack and risk labels are computed from actual data.
+- [ ] Independent verifier checks all required invariants.
+- [ ] Approval is bound to the exact action payload and plan version.
+- [ ] Executor implements legal state transitions and idempotency.
+- [ ] Ambiguous side effects remain `outcomeUnknown` until reconciled.
+- [ ] Replanning creates a new version and a correct diff.
+- [ ] Commitment status depends on evidence, not on model assertions.
+- [ ] Baseline comparison runs from reproducible scenarios.
 
 ## Integration and hackathon
 
--   [ ] Real MCP server exists and uses Streamable HTTP.
--   [ ] MCP protocol version meets the current official requirement.
--   [ ] Tool handlers call actual domain services.
--   [ ] A compatible MCP client can initialize, list, and call tools.
--   [ ] Real AWS service is invoked in runtime code and documented.
--   [ ] UI labels simulator and live integrations accurately.
--   [ ] README explains local setup and test execution from a clean
-    checkout.
--   [ ] License and repository visibility comply with current rules.
--   [ ] Submission requirements, demo video, and repository access are
-    rechecked before the deadline.
+- [ ] Real MCP server exists and uses Streamable HTTP.
+- [ ] MCP protocol version meets the current official requirement.
+- [ ] Tool handlers call actual domain services.
+- [ ] A compatible MCP client can initialize, list, and call tools.
+- [ ] Real AWS service is invoked in runtime code and documented.
+- [ ] UI labels simulator and live integrations accurately.
+- [ ] README explains local setup and test execution from a clean
+      checkout.
+- [ ] License and repository visibility comply with current rules.
+- [ ] Submission requirements, demo video, and repository access are
+      rechecked before the deadline.
 
 ## Reliability and security
 
--   [ ] Structured logs have correlation IDs and stable error codes.
--   [ ] Sensitive fields are redacted and covered by tests.
--   [ ] No secrets are committed.
--   [ ] Provider timeout and persistence failure are tested.
--   [ ] Duplicate requests and replayed events are tested.
--   [ ] Authorization and approval bypass attempts are tested.
--   [ ] No unhandled promise rejections occur in the tested paths.
--   [ ] No critical/high-severity unresolved issue is hidden.
--   [ ] Known limitations are documented.
+- [ ] Structured logs have correlation IDs and stable error codes.
+- [ ] Sensitive fields are redacted and covered by tests.
+- [ ] No secrets are committed.
+- [ ] Provider timeout and persistence failure are tested.
+- [ ] Duplicate requests and replayed events are tested.
+- [ ] Authorization and approval bypass attempts are tested.
+- [ ] No unhandled promise rejections occur in the tested paths.
+- [ ] No critical/high-severity unresolved issue is hidden.
+- [ ] Known limitations are documented.
 
 ## Final evidence
 
--   [ ] Clean-checkout build completed.
--   [ ] Formatting, linting, type checking, unit, integration, and E2E
-    tests ran.
--   [ ] MCP smoke test ran.
--   [ ] Fault-injection suite ran.
--   [ ] Benchmark ran and produced raw output.
--   [ ] `docs/release-report.md` lists actual commands, results, skips,
-    and limitations.
--   [ ] Demo video shows the real running system, including a failure
-    and recovery.
--   [ ] No claim of "bug-free" or "guaranteed correct" is made.
+- [ ] Clean-checkout build completed.
+- [ ] Formatting, linting, type checking, unit, integration, and E2E
+      tests ran.
+- [ ] MCP smoke test ran.
+- [ ] Fault-injection suite ran.
+- [ ] Benchmark ran and produced raw output.
+- [ ] `docs/release-report.md` lists actual commands, results, skips,
+      and limitations.
+- [ ] Demo video shows the real running system, including a failure
+      and recovery.
+- [ ] No claim of "bug-free" or "guaranteed correct" is made.
 
-------------------------------------------------------------------------
+---
 
 # 15. Definition of done
 
