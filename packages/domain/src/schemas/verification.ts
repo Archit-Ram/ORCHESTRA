@@ -40,12 +40,9 @@ export const planVerificationResultSchema = z
     }
     const hasHardViolation = result.violations.some((v) => v.severity === "hard");
     if (result.isValid && hasHardViolation) {
-      addTaggedIssue(
-        ctx,
-        "INCONSISTENT_STATE",
-        "A plan with a hard violation cannot be valid.",
-        ["isValid"],
-      );
+      addTaggedIssue(ctx, "INCONSISTENT_STATE", "A plan with a hard violation cannot be valid.", [
+        "isValid",
+      ]);
     }
     if (!result.isValid && !hasHardViolation) {
       addTaggedIssue(
@@ -58,6 +55,4 @@ export const planVerificationResultSchema = z
   });
 
 export type ConstraintViolation = z.infer<typeof constraintViolationSchema>;
-export type PlanVerificationResult = z.infer<
-  typeof planVerificationResultSchema
->;
+export type PlanVerificationResult = z.infer<typeof planVerificationResultSchema>;

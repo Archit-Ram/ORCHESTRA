@@ -7,7 +7,11 @@ import {
   toLocalDateTimeString,
 } from "../src/scheduler/time-zone.js";
 
-function resolved(localDateTime: string, timeZone: string, ambiguity?: "reject" | "earlier" | "later") {
+function resolved(
+  localDateTime: string,
+  timeZone: string,
+  ambiguity?: "reject" | "earlier" | "later",
+) {
   const result = resolveLocalDateTime(
     ambiguity === undefined ? { localDateTime, timeZone } : { localDateTime, timeZone, ambiguity },
   );
@@ -34,8 +38,12 @@ describe("resolveLocalDateTime: ordinary times", () => {
   });
 
   it("applies daylight time in summer and standard time in winter", () => {
-    expect(resolved("2026-07-01T12:00", "America/New_York").instantUtc).toBe("2026-07-01T16:00:00.000Z");
-    expect(resolved("2026-01-01T12:00", "America/New_York").instantUtc).toBe("2026-01-01T17:00:00.000Z");
+    expect(resolved("2026-07-01T12:00", "America/New_York").instantUtc).toBe(
+      "2026-07-01T16:00:00.000Z",
+    );
+    expect(resolved("2026-01-01T12:00", "America/New_York").instantUtc).toBe(
+      "2026-01-01T17:00:00.000Z",
+    );
     expect(resolved("2026-10-23T17:00", "America/Los_Angeles").utcOffsetMinutes).toBe(-420);
   });
 });
@@ -48,8 +56,12 @@ describe("resolveLocalDateTime: daylight-saving gaps (nonexistent times)", () =>
   });
 
   it("accepts the minute just before and at the end of the gap", () => {
-    expect(resolved("2026-03-08T01:59", "America/New_York").instantUtc).toBe("2026-03-08T06:59:00.000Z");
-    expect(resolved("2026-03-08T03:00", "America/New_York").instantUtc).toBe("2026-03-08T07:00:00.000Z");
+    expect(resolved("2026-03-08T01:59", "America/New_York").instantUtc).toBe(
+      "2026-03-08T06:59:00.000Z",
+    );
+    expect(resolved("2026-03-08T03:00", "America/New_York").instantUtc).toBe(
+      "2026-03-08T07:00:00.000Z",
+    );
   });
 
   it("rejects skipped times in Europe/London and Australia/Sydney", () => {
@@ -123,13 +135,28 @@ describe("resolveLocalDateTime: invalid input", () => {
   });
 
   it("rejects text that already carries an offset or has the wrong shape", () => {
-    for (const text of ["2026-10-23T17:00Z", "2026-10-23T17:00+05:30", "2026-10-23 17:00", "2026-10-23", "5pm", "", "2026-10-23T17:00:00.500"]) {
+    for (const text of [
+      "2026-10-23T17:00Z",
+      "2026-10-23T17:00+05:30",
+      "2026-10-23 17:00",
+      "2026-10-23",
+      "5pm",
+      "",
+      "2026-10-23T17:00:00.500",
+    ]) {
       expect(failed(text, "UTC").code).toBe("INVALID_LOCAL_TIME");
     }
   });
 
   it("rejects impossible calendar values", () => {
-    for (const text of ["2026-02-30T10:00", "2026-13-01T10:00", "2026-10-23T24:00", "2026-10-23T10:60", "2026-10-23T10:00:60", "1800-01-01T00:00"]) {
+    for (const text of [
+      "2026-02-30T10:00",
+      "2026-13-01T10:00",
+      "2026-10-23T24:00",
+      "2026-10-23T10:60",
+      "2026-10-23T10:00:60",
+      "1800-01-01T00:00",
+    ]) {
       expect(failed(text, "UTC").code).toBe("INVALID_LOCAL_TIME");
     }
   });
@@ -145,14 +172,18 @@ describe("offset helpers", () => {
   });
 
   it("formats an instant as local time and round-trips", () => {
-    expect(toLocalDateTimeString("Asia/Kolkata", "2026-10-23T11:30:00.000Z")).toBe("2026-10-23T17:00:00");
+    expect(toLocalDateTimeString("Asia/Kolkata", "2026-10-23T11:30:00.000Z")).toBe(
+      "2026-10-23T17:00:00",
+    );
     const local = toLocalDateTimeString("America/New_York", "2026-07-01T16:00:00.000Z") as string;
     expect(resolved(local, "America/New_York").instantUtc).toBe("2026-07-01T16:00:00.000Z");
     expect(toLocalDateTimeString("Nope/Zone", "2026-10-23T11:30:00.000Z")).toBeNull();
   });
 
   it("formats midnight as 00:00, not 24:00", () => {
-    expect(toLocalDateTimeString("America/New_York", "2026-07-01T04:00:00.000Z")).toBe("2026-07-01T00:00:00");
+    expect(toLocalDateTimeString("America/New_York", "2026-07-01T04:00:00.000Z")).toBe(
+      "2026-07-01T00:00:00",
+    );
   });
 });
 
@@ -161,8 +192,13 @@ describe("localTimeFailureToDomainError", () => {
     const ambiguous = localTimeFailureToDomainError(failed("2026-11-01T01:30", "America/New_York"));
     expect(ambiguous).toBeInstanceOf(DomainError);
     expect(ambiguous.code).toBe("AMBIGUOUS_REQUEST");
-    expect(ambiguous.metadata["candidatesUtc"]).toEqual(["2026-11-01T05:30:00.000Z", "2026-11-01T06:30:00.000Z"]);
-    expect(localTimeFailureToDomainError(failed("2026-03-08T02:30", "America/New_York")).code).toBe("INVALID_INPUT");
+    expect(ambiguous.metadata["candidatesUtc"]).toEqual([
+      "2026-11-01T05:30:00.000Z",
+      "2026-11-01T06:30:00.000Z",
+    ]);
+    expect(localTimeFailureToDomainError(failed("2026-03-08T02:30", "America/New_York")).code).toBe(
+      "INVALID_INPUT",
+    );
     expect(localTimeFailureToDomainError(failed("x", "UTC")).code).toBe("INVALID_INPUT");
   });
 });

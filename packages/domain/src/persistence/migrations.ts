@@ -15,7 +15,8 @@ export interface Migration {
   readonly sql: string;
 }
 
-const inList = (values: readonly string[]): string => values.map((value) => `'${value}'`).join(", ");
+const inList = (values: readonly string[]): string =>
+  values.map((value) => `'${value}'`).join(", ");
 
 const appendOnly = (table: string): string => `
 CREATE TRIGGER ${table}_no_update BEFORE UPDATE ON ${table}
@@ -236,13 +237,17 @@ export function migrate(
   ) STRICT`);
 
   const known = new Map(migrations.map((migration) => [migration.version, migration] as const));
-  const applied = database.prepare("SELECT version, checksum FROM schema_migrations ORDER BY version").all();
+  const applied = database
+    .prepare("SELECT version, checksum FROM schema_migrations ORDER BY version")
+    .all();
   const appliedVersions = new Set<number>();
   for (const row of applied) {
     const version = Number(row["version"]);
     const migration = known.get(version);
     if (migration === undefined) {
-      fail("the database was created by a newer version of the software", { databaseVersion: version });
+      fail("the database was created by a newer version of the software", {
+        databaseVersion: version,
+      });
     }
     if (row["checksum"] !== migrationChecksum(migration)) {
       fail("an applied migration no longer matches its recorded checksum", { version });
@@ -256,7 +261,9 @@ export function migrate(
     transactions.run(() => {
       database.exec(migration.sql);
       database
-        .prepare("INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)")
+        .prepare(
+          "INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)",
+        )
         .run(migration.version, migration.name, migrationChecksum(migration), nowIso);
     });
     newlyApplied.push(migration.version);

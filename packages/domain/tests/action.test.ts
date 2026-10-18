@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { plannedActionSchema } from "../src/schemas/action.js";
-import {
-  expectAccepted,
-  expectRejected,
-  validAction,
-} from "./helpers/fixtures.js";
+import { expectAccepted, expectRejected, validAction } from "./helpers/fixtures.js";
 
 describe("plannedActionSchema", () => {
   it("accepts a valid action", () => {
@@ -59,22 +55,57 @@ describe("plannedActionSchema", () => {
   });
 
   it("rejects bad enum values", () => {
-    expectRejected(plannedActionSchema, { ...validAction(), status: "done" }, "status", "INVALID_ENUM_VALUE");
-    expectRejected(plannedActionSchema, { ...validAction(), riskClass: "extreme" }, "riskClass", "INVALID_ENUM_VALUE");
-    expectRejected(plannedActionSchema, { ...validAction(), approvalStatus: "maybe" }, "approvalStatus", "INVALID_ENUM_VALUE");
+    expectRejected(
+      plannedActionSchema,
+      { ...validAction(), status: "done" },
+      "status",
+      "INVALID_ENUM_VALUE",
+    );
+    expectRejected(
+      plannedActionSchema,
+      { ...validAction(), riskClass: "extreme" },
+      "riskClass",
+      "INVALID_ENUM_VALUE",
+    );
+    expectRejected(
+      plannedActionSchema,
+      { ...validAction(), approvalStatus: "maybe" },
+      "approvalStatus",
+      "INVALID_ENUM_VALUE",
+    );
   });
 
   it("rejects non-lowerCamelCase tool names", () => {
-    expectRejected(plannedActionSchema, { ...validAction(), toolName: "Send_Email" }, "toolName", "INVALID_FORMAT");
+    expectRejected(
+      plannedActionSchema,
+      { ...validAction(), toolName: "Send_Email" },
+      "toolName",
+      "INVALID_FORMAT",
+    );
   });
 
   it("rejects an action that serves no commitment", () => {
-    expectRejected(plannedActionSchema, { ...validAction(), commitmentIds: [] }, "commitmentIds", "CONSTRAINT_VIOLATED");
+    expectRejected(
+      plannedActionSchema,
+      { ...validAction(), commitmentIds: [] },
+      "commitmentIds",
+      "CONSTRAINT_VIOLATED",
+    );
   });
 
   it("rejects malformed timestamps", () => {
-    expectRejected(plannedActionSchema, { ...validAction(), deadlineAt: "5pm" }, "deadlineAt", "INVALID_TIMESTAMP");
-    expectRejected(plannedActionSchema, { ...validAction(), earliestStartAt: "2026-10-23T10:00:00" }, "earliestStartAt", "INVALID_TIMESTAMP");
+    expectRejected(
+      plannedActionSchema,
+      { ...validAction(), deadlineAt: "5pm" },
+      "deadlineAt",
+      "INVALID_TIMESTAMP",
+    );
+    expectRejected(
+      plannedActionSchema,
+      { ...validAction(), earliestStartAt: "2026-10-23T10:00:00" },
+      "earliestStartAt",
+      "INVALID_TIMESTAMP",
+    );
   });
 
   it("rejects a deadline before the earliest start", () => {
@@ -91,19 +122,49 @@ describe("plannedActionSchema", () => {
   });
 
   it("rejects a self-dependency and duplicate dependencies", () => {
-    expectRejected(plannedActionSchema, { ...validAction(), dependencyActionIds: ["action_send_report"] }, "dependencyActionIds[0]", "SELF_REFERENCE");
-    expectRejected(plannedActionSchema, { ...validAction(), dependencyActionIds: ["action_a", "action_a"] }, "dependencyActionIds[1]", "DUPLICATE_ID");
+    expectRejected(
+      plannedActionSchema,
+      { ...validAction(), dependencyActionIds: ["action_send_report"] },
+      "dependencyActionIds[0]",
+      "SELF_REFERENCE",
+    );
+    expectRejected(
+      plannedActionSchema,
+      { ...validAction(), dependencyActionIds: ["action_a", "action_a"] },
+      "dependencyActionIds[1]",
+      "DUPLICATE_ID",
+    );
   });
 
   it("rejects short or malformed idempotency keys", () => {
-    expectRejected(plannedActionSchema, { ...validAction(), idempotencyKey: "short" }, "idempotencyKey", "OUT_OF_RANGE");
-    expectRejected(plannedActionSchema, { ...validAction(), idempotencyKey: "has spaces in it" }, "idempotencyKey", "INVALID_FORMAT");
+    expectRejected(
+      plannedActionSchema,
+      { ...validAction(), idempotencyKey: "short" },
+      "idempotencyKey",
+      "OUT_OF_RANGE",
+    );
+    expectRejected(
+      plannedActionSchema,
+      { ...validAction(), idempotencyKey: "has spaces in it" },
+      "idempotencyKey",
+      "INVALID_FORMAT",
+    );
   });
 
   describe("input payload", () => {
     it("rejects non-object input", () => {
-      expectRejected(plannedActionSchema, { ...validAction(), input: ["a"] }, "input", "INVALID_TYPE");
-      expectRejected(plannedActionSchema, { ...validAction(), input: "text" }, "input", "INVALID_TYPE");
+      expectRejected(
+        plannedActionSchema,
+        { ...validAction(), input: ["a"] },
+        "input",
+        "INVALID_TYPE",
+      );
+      expectRejected(
+        plannedActionSchema,
+        { ...validAction(), input: "text" },
+        "input",
+        "INVALID_TYPE",
+      );
     });
     it("rejects oversized input", () => {
       expectRejected(
@@ -149,7 +210,12 @@ describe("plannedActionSchema", () => {
         "INCONSISTENT_STATE",
       );
     });
-    for (const status of ["running", "succeeded", "outcomeUnknown", "compensationRequired"] as const) {
+    for (const status of [
+      "running",
+      "succeeded",
+      "outcomeUnknown",
+      "compensationRequired",
+    ] as const) {
       it(`rejects ${status} without approval`, () => {
         expectRejected(
           plannedActionSchema,
@@ -165,7 +231,11 @@ describe("plannedActionSchema", () => {
         );
       });
       it(`accepts ${status} once approved`, () => {
-        expectAccepted(plannedActionSchema, { ...validAction(), status, approvalStatus: "approved" });
+        expectAccepted(plannedActionSchema, {
+          ...validAction(),
+          status,
+          approvalStatus: "approved",
+        });
       });
     }
     it("accepts a running action that never needed approval", () => {

@@ -9,11 +9,11 @@ Tests: `policy.test.ts`, `plan-verifier.test.ts`, `execution-gate.test.ts`
 
 ## Layers
 
-| Layer | Function | Question it answers |
-| --- | --- | --- |
-| Policy | `toolRequiresApproval`, `missingScopes`, `evaluateApproval`, `computeActionPayloadHash` | What does policy demand, and does a valid approval exist? |
-| Plan verifier | `verifyPlan` | Is this whole plan, with this schedule, safe to run? |
-| Execution gate | `evaluateExecutionGate`, `runIfAllowed` | May this one action run **right now**? |
+| Layer          | Function                                                                                | Question it answers                                       |
+| -------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Policy         | `toolRequiresApproval`, `missingScopes`, `evaluateApproval`, `computeActionPayloadHash` | What does policy demand, and does a valid approval exist? |
+| Plan verifier  | `verifyPlan`                                                                            | Is this whole plan, with this schedule, safe to run?      |
+| Execution gate | `evaluateExecutionGate`, `runIfAllowed`                                                 | May this one action run **right now**?                    |
 
 Nothing here calls a model, a clock, a database, or an adapter. Callers pass in
 facts (`VerificationContext`); the functions return decisions. The LLM is never
@@ -64,13 +64,13 @@ expired), not already consumed. Outcomes: `notRequired`, `approved`, `missing`,
 violation exists. All violations are returned, sorted deterministically with
 sequential IDs (`violation_0001`...).
 
-| Stage | Checks (hard unless noted) |
-| --- | --- |
-| 1 Graph | duplicate ID, missing dependency, self-loop, cycle |
-| 2 Version | plan version equals the current version |
+| Stage        | Checks (hard unless noted)                                                                                                                                                                                                                                                               |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 Graph      | duplicate ID, missing dependency, self-loop, cycle                                                                                                                                                                                                                                       |
+| 2 Version    | plan version equals the current version                                                                                                                                                                                                                                                  |
 | 3 Per action | idempotency conflicts (within plan and against recorded keys); tool registered; tool environment matches; input matches the tool schema; user holds required scopes; approval flag not downgraded; risk class not understated; approval evidence (see below); unmet preconditions (soft) |
-| 4 Invariants | `approvalRequired`, `recipientAllowList`, `dependencySatisfied`, `noDuplicateSideEffect`; malformed parameters are a hard failure; a target no longer in the plan is a soft note |
-| 5 Timing | schedule present and covering every unfinished action; schedule/plan mismatch; duration mismatch; release time; dependency order; dependency can no longer succeed; action deadline; `deadline` and `protectedTimeWindow` invariants |
+| 4 Invariants | `approvalRequired`, `recipientAllowList`, `dependencySatisfied`, `noDuplicateSideEffect`; malformed parameters are a hard failure; a target no longer in the plan is a soft note                                                                                                         |
+| 5 Timing     | schedule present and covering every unfinished action; schedule/plan mismatch; duration mismatch; release time; dependency order; dependency can no longer succeed; action deadline; `deadline` and `protectedTimeWindow` invariants                                                     |
 
 Invariant severity (`hard`/`soft`) is respected: a soft violation is reported but
 does not invalidate the plan.
@@ -83,7 +83,7 @@ history and are not re-verified or re-scheduled.
 
 **Approval at plan level.** A missing, expired, mismatched, or rejected approval
 is a **soft** warning (the user can fix it by approving), except an action that
-*claims* `approvalStatus = approved` with no valid record, which is **hard**
+_claims_ `approvalStatus = approved` with no valid record, which is **hard**
 (`APPROVAL_CLAIM_UNSUPPORTED`). Actions already `running`/`outcomeUnknown` skip
 approval evaluation: their gate was passed and their approval is spent.
 
@@ -136,13 +136,13 @@ approval consumed in the same transaction that persists `running`.
 
 ## Suggested lines for `docs/implementation-status.md`
 
-| Requirement | Status | Evidence |
-| --- | --- | --- |
-| Algorithm E: independent plan verifier | `tested` | `pnpm test:unit` (plan-verifier tests) |
-| Algorithm F: policy, approval binding, payload hash | `tested` | `pnpm test:unit` (policy tests) |
-| Execution gate; no adapter call on denial | `tested` | `pnpm test:unit` (execution-gate tests) |
-| Tool catalog with risk class and scopes | `tested` | `pnpm test:unit` |
-| Persistence, consumption and idempotency records | `notStarted` | Prompt 6 |
-| Executor and adapter registry | `notStarted` | Prompt 7 |
+| Requirement                                         | Status       | Evidence                                |
+| --------------------------------------------------- | ------------ | --------------------------------------- |
+| Algorithm E: independent plan verifier              | `tested`     | `pnpm test:unit` (plan-verifier tests)  |
+| Algorithm F: policy, approval binding, payload hash | `tested`     | `pnpm test:unit` (policy tests)         |
+| Execution gate; no adapter call on denial           | `tested`     | `pnpm test:unit` (execution-gate tests) |
+| Tool catalog with risk class and scopes             | `tested`     | `pnpm test:unit`                        |
+| Persistence, consumption and idempotency records    | `notStarted` | Prompt 6                                |
+| Executor and adapter registry                       | `notStarted` | Prompt 7                                |
 
 Mark `tested` only after `pnpm test:unit` passes in the real repository.

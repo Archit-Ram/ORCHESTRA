@@ -24,13 +24,17 @@ export function textOrNull(row: SqlRow, column: string): string | null {
 
 export function integer(row: SqlRow, column: string): number {
   const value = row[column];
-  return typeof value === "number" && Number.isInteger(value) ? value : corrupt("expected integer", column);
+  return typeof value === "number" && Number.isInteger(value)
+    ? value
+    : corrupt("expected integer", column);
 }
 
 export function integerOrNull(row: SqlRow, column: string): number | null {
   const value = row[column];
   if (value === null) return null;
-  return typeof value === "number" && Number.isInteger(value) ? value : corrupt("expected integer or null", column);
+  return typeof value === "number" && Number.isInteger(value)
+    ? value
+    : corrupt("expected integer or null", column);
 }
 
 /** Parses a stored JSON body and re-validates it; stored data is not trusted blindly. */
@@ -61,7 +65,11 @@ export function notFound(entity: string, id: string): DomainError {
   });
 }
 
-export function invalid(entity: string, reason: string, details: Record<string, unknown> = {}): DomainError {
+export function invalid(
+  entity: string,
+  reason: string,
+  details: Record<string, unknown> = {},
+): DomainError {
   return new DomainError({
     code: "INVALID_INPUT",
     userMessage: "The request cannot be stored as given.",

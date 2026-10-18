@@ -71,12 +71,25 @@ export function evaluateExecutionGate(request: {
     errorCode: ErrorCode,
     invariantId: string | null = null,
   ): void => {
-    gateFindings.push({ stage: 6, code, severity: "hard", actionId, invariantId, message, explanation, errorCode });
+    gateFindings.push({
+      stage: 6,
+      code,
+      severity: "hard",
+      actionId,
+      invariantId,
+      message,
+      explanation,
+      errorCode,
+    });
   };
 
   if (action === undefined) {
-    hard("ACTION_NOT_IN_PLAN", "The action is not part of this plan.",
-      `Action ${actionId} does not exist in plan ${context.plan.planId}.`, "INVALID_INPUT");
+    hard(
+      "ACTION_NOT_IN_PLAN",
+      "The action is not part of this plan.",
+      `Action ${actionId} does not exist in plan ${context.plan.planId}.`,
+      "INVALID_INPUT",
+    );
     return deny(actionId, [...collected.findings, ...gateFindings]);
   }
 
@@ -88,31 +101,51 @@ export function evaluateExecutionGate(request: {
       !(
         finding.actionId === actionId &&
         finding.severity === "soft" &&
-        (finding.code.startsWith(approvalCodePrefix) || finding.code === "PRECONDITION_NOT_YET_SATISFIED")
+        (finding.code.startsWith(approvalCodePrefix) ||
+          finding.code === "PRECONDITION_NOT_YET_SATISFIED")
       ),
   );
 
   if (FINISHED_ACTION_STATUSES.includes(action.status)) {
-    hard("ACTION_ALREADY_FINISHED", "The action has already finished.",
-      `Action ${actionId} is ${action.status} and must not run again.`, "ACTION_STATE_CONFLICT");
+    hard(
+      "ACTION_ALREADY_FINISHED",
+      "The action has already finished.",
+      `Action ${actionId} is ${action.status} and must not run again.`,
+      "ACTION_STATE_CONFLICT",
+    );
   } else if (!EXECUTABLE_STATUSES.includes(action.status)) {
-    hard("ACTION_NOT_EXECUTABLE", "The action is not in an executable state.",
-      `Action ${actionId} is ${action.status}; only ready or awaiting-approval actions can start.`, "ACTION_STATE_CONFLICT");
+    hard(
+      "ACTION_NOT_EXECUTABLE",
+      "The action is not in an executable state.",
+      `Action ${actionId} is ${action.status}; only ready or awaiting-approval actions can start.`,
+      "ACTION_STATE_CONFLICT",
+    );
   }
 
   for (const dependencyId of action.dependencyActionIds) {
-    const dependency = context.plan.actions.find((candidate) => candidate.actionId === dependencyId);
+    const dependency = context.plan.actions.find(
+      (candidate) => candidate.actionId === dependencyId,
+    );
     if (dependency === undefined || dependency.status !== "succeeded") {
-      hard("DEPENDENCY_NOT_COMPLETE", "A dependency has not succeeded.",
+      hard(
+        "DEPENDENCY_NOT_COMPLETE",
+        "A dependency has not succeeded.",
         `Dependency ${dependencyId} is ${dependency === undefined ? "missing" : dependency.status}; it must succeed before action ${actionId} runs.`,
-        "ACTION_STATE_CONFLICT");
+        "ACTION_STATE_CONFLICT",
+      );
     }
   }
 
-  const unmet = action.preconditionIds.filter((id) => !context.satisfiedPreconditionIds.has(id)).sort();
+  const unmet = action.preconditionIds
+    .filter((id) => !context.satisfiedPreconditionIds.has(id))
+    .sort();
   if (unmet.length > 0) {
-    hard("PRECONDITION_NOT_SATISFIED", "Some preconditions do not hold.",
-      `Unsatisfied precondition(s): ${unmet.join(", ")}.`, "ACTION_STATE_CONFLICT");
+    hard(
+      "PRECONDITION_NOT_SATISFIED",
+      "Some preconditions do not hold.",
+      `Unsatisfied precondition(s): ${unmet.join(", ")}.`,
+      "ACTION_STATE_CONFLICT",
+    );
   }
 
   const evaluation = evaluateApproval({
@@ -126,28 +159,49 @@ export function evaluateExecutionGate(request: {
     nowMs: collected.nowMs,
   });
   if (evaluation.status !== "notRequired" && evaluation.status !== "approved") {
-    hard(approvalFindingCode(evaluation.status), evaluation.message,
+    hard(
+      approvalFindingCode(evaluation.status),
+      evaluation.message,
       "Execution is blocked until a valid, unused approval matches this exact action and plan version.",
-      evaluation.errorCode ?? "POLICY_DENIED");
+      evaluation.errorCode ?? "POLICY_DENIED",
+    );
   }
 
   if (context.recordedIdempotencyKeys.get(action.idempotencyKey) === action.actionId) {
-    hard("IDEMPOTENCY_CONFLICT", "This action was already submitted.",
+    hard(
+      "IDEMPOTENCY_CONFLICT",
+      "This action was already submitted.",
       `An execution is already recorded for idempotency key of action ${actionId}; check its outcome instead of running it again.`,
-      "IDEMPOTENCY_CONFLICT");
+      "IDEMPOTENCY_CONFLICT",
+    );
   }
 
-  for (const invariant of [...context.invariants].sort((a, b) => (a.invariantId < b.invariantId ? -1 : 1))) {
+  for (const invariant of [...context.invariants].sort((a, b) =>
+    a.invariantId < b.invariantId ? -1 : 1,
+  )) {
     if (invariant.ruleType !== "protectedTimeWindow") continue;
-    const startMs = typeof invariant.parameters["startAt"] === "string" ? parseIsoTimestamp(invariant.parameters["startAt"]) : null;
-    const endMs = typeof invariant.parameters["endAt"] === "string" ? parseIsoTimestamp(invariant.parameters["endAt"]) : null;
+    const startMs =
+      typeof invariant.parameters["startAt"] === "string"
+        ? parseIsoTimestamp(invariant.parameters["startAt"])
+        : null;
+    const endMs =
+      typeof invariant.parameters["endAt"] === "string"
+        ? parseIsoTimestamp(invariant.parameters["endAt"])
+        : null;
     const prohibited = invariant.parameters["prohibitedToolNames"];
     if (
-      startMs !== null && endMs !== null && Array.isArray(prohibited) &&
-      prohibited.includes(action.toolName) && collected.nowMs >= startMs && collected.nowMs < endMs
+      startMs !== null &&
+      endMs !== null &&
+      Array.isArray(prohibited) &&
+      prohibited.includes(action.toolName) &&
+      collected.nowMs >= startMs &&
+      collected.nowMs < endMs
     ) {
       gateFindings.push({
-        stage: 6, code: "PROTECTED_WINDOW_ACTIVE", severity: invariant.severity, actionId,
+        stage: 6,
+        code: "PROTECTED_WINDOW_ACTIVE",
+        severity: invariant.severity,
+        actionId,
         invariantId: invariant.invariantId,
         message: "A protected time window is active right now.",
         explanation: `Tool ${action.toolName} is prohibited now by invariant ${invariant.invariantId}.`,
@@ -201,7 +255,10 @@ function deny(actionId: string, findings: readonly Finding[]): DeniedDecision {
 export async function runIfAllowed<T>(
   decision: GateDecision,
   call: (grant: ExecutionGrant) => Promise<T>,
-): Promise<{ readonly executed: true; readonly result: T } | { readonly executed: false; readonly decision: DeniedDecision }> {
+): Promise<
+  | { readonly executed: true; readonly result: T }
+  | { readonly executed: false; readonly decision: DeniedDecision }
+> {
   if (!decision.allowed) return { executed: false, decision };
   return { executed: true, result: await call(decision.grant) };
 }

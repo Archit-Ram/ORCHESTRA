@@ -34,7 +34,10 @@ function minutes(offset: number): string {
 function randomTasks(seed: number): ScheduleTask[] {
   const random = createRandom(seed);
   const count = Math.floor(random() * 25);
-  const ids = shuffle(Array.from({ length: count }, (_, index) => `task_${String(index).padStart(3, "0")}`), random);
+  const ids = shuffle(
+    Array.from({ length: count }, (_, index) => `task_${String(index).padStart(3, "0")}`),
+    random,
+  );
   const density = random() * 0.4;
   return ids.map((id, index) => ({
     id,
@@ -59,7 +62,8 @@ describe("generated schedules satisfy the scheduling invariants", () => {
         if (scheduled === undefined) continue;
         for (const dependencyId of t.dependsOn) {
           const dependency = placed.get(dependencyId);
-          if (dependency === undefined) throw new Error(`seed ${seed}: ${t.id} scheduled without ${dependencyId}`);
+          if (dependency === undefined)
+            throw new Error(`seed ${seed}: ${t.id} scheduled without ${dependencyId}`);
           if (Date.parse(dependency.finishAt) > Date.parse(scheduled.startAt)) {
             throw new Error(`seed ${seed}: ${dependencyId} finishes after ${t.id} starts`);
           }
@@ -96,7 +100,8 @@ describe("generated schedules satisfy the scheduling invariants", () => {
       for (const scheduled of result.schedule.tasks) {
         const start = Date.parse(scheduled.startAt);
         const finish = Date.parse(scheduled.finishAt);
-        if (start < previousFinish) throw new Error(`seed ${seed}: ${scheduled.id} overlaps its predecessor`);
+        if (start < previousFinish)
+          throw new Error(`seed ${seed}: ${scheduled.id} overlaps its predecessor`);
         const release = releases.get(scheduled.id);
         if (release !== null && release !== undefined && start < Date.parse(release)) {
           throw new Error(`seed ${seed}: ${scheduled.id} starts before release`);
@@ -154,16 +159,29 @@ describe("generated schedules satisfy the scheduling invariants", () => {
         }
         if (slackMs > 30 * 60_000) expect(scheduled.risk).toBe("onTrack");
       }
-      const expected = hardLate ? "infeasible" : result.schedule.unscheduled.length > 0 ? "unknown" : "feasible";
-      expect({ seed, feasibility: result.schedule.feasibility }).toEqual({ seed, feasibility: expected });
+      const expected = hardLate
+        ? "infeasible"
+        : result.schedule.unscheduled.length > 0
+          ? "unknown"
+          : "feasible";
+      expect({ seed, feasibility: result.schedule.feasibility }).toEqual({
+        seed,
+        feasibility: expected,
+      });
     }
   });
 
   it("is deterministic for any shuffle of the input", () => {
     for (const seed of SEEDS) {
       const tasks = randomTasks(seed);
-      const first = generateSchedule({ planningStartAt: START, tasks: shuffle(tasks, createRandom(seed)) });
-      const second = generateSchedule({ planningStartAt: START, tasks: shuffle(tasks, createRandom(seed + 500)) });
+      const first = generateSchedule({
+        planningStartAt: START,
+        tasks: shuffle(tasks, createRandom(seed)),
+      });
+      const second = generateSchedule({
+        planningStartAt: START,
+        tasks: shuffle(tasks, createRandom(seed + 500)),
+      });
       expect(JSON.stringify(second)).toBe(JSON.stringify(first));
     }
   });

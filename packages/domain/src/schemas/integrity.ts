@@ -36,9 +36,7 @@ function findDuplicates<T>(
  * are not reported (it is "not provided", not "empty"). Cycle detection is the
  * graph module's job, not this function's.
  */
-export function checkReferentialIntegrity(
-  input: IntegrityInput,
-): ValidationIssue[] {
+export function checkReferentialIntegrity(input: IntegrityInput): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const { commitments, actions, invariants } = input;
 
@@ -52,12 +50,8 @@ export function checkReferentialIntegrity(
     findDuplicates(invariants, (i) => i.invariantId, "invariants", "invariantId", issues);
   }
 
-  const commitmentIds = commitments
-    ? new Set(commitments.map((c) => c.commitmentId))
-    : null;
-  const invariantIds = invariants
-    ? new Set(invariants.map((i) => i.invariantId))
-    : null;
+  const commitmentIds = commitments ? new Set(commitments.map((c) => c.commitmentId)) : null;
+  const invariantIds = invariants ? new Set(invariants.map((i) => i.invariantId)) : null;
   const actionIds = actions ? new Set(actions.map((a) => a.actionId)) : null;
 
   const reportUnresolved = (path: string): void => {

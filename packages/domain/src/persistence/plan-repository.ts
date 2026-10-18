@@ -17,33 +17,58 @@ export class SqlitePlanRepository implements PlanRepository {
       const head = this.getCurrentVersion(valid.planId);
       if (head === null) {
         if (valid.planVersion !== 1) {
-          throw conflict("plan", { planId: valid.planId, expectedVersion: 1, givenVersion: valid.planVersion });
+          throw conflict("plan", {
+            planId: valid.planId,
+            expectedVersion: 1,
+            givenVersion: valid.planVersion,
+          });
         }
-        this.database.prepare("INSERT INTO plan_heads (plan_id, current_version) VALUES (?, ?)").run(valid.planId, 1);
+        this.database
+          .prepare("INSERT INTO plan_heads (plan_id, current_version) VALUES (?, ?)")
+          .run(valid.planId, 1);
       } else {
         if (valid.planVersion !== head + 1 || valid.parentPlanVersion !== head) {
-          throw conflict("plan", { planId: valid.planId, expectedVersion: head + 1, givenVersion: valid.planVersion, givenParent: valid.parentPlanVersion });
+          throw conflict("plan", {
+            planId: valid.planId,
+            expectedVersion: head + 1,
+            givenVersion: valid.planVersion,
+            givenParent: valid.parentPlanVersion,
+          });
         }
         const moved = this.database
-          .prepare("UPDATE plan_heads SET current_version = ? WHERE plan_id = ? AND current_version = ?")
+          .prepare(
+            "UPDATE plan_heads SET current_version = ? WHERE plan_id = ? AND current_version = ?",
+          )
           .run(valid.planVersion, valid.planId, head);
-        if (moved.changes !== 1) throw conflict("plan", { planId: valid.planId, expectedVersion: head + 1 });
+        if (moved.changes !== 1)
+          throw conflict("plan", { planId: valid.planId, expectedVersion: head + 1 });
       }
       this.database
         .prepare(
           "INSERT INTO plans (plan_id, plan_version, parent_plan_version, created_at, created_from_event_id, superseded_by_version, body) VALUES (?, ?, ?, ?, ?, NULL, ?)",
         )
-        .run(valid.planId, valid.planVersion, valid.parentPlanVersion, valid.createdAt, valid.createdFromEventId, JSON.stringify(valid));
+        .run(
+          valid.planId,
+          valid.planVersion,
+          valid.parentPlanVersion,
+          valid.createdAt,
+          valid.createdFromEventId,
+          JSON.stringify(valid),
+        );
       if (head !== null) {
         this.database
-          .prepare("UPDATE plans SET superseded_by_version = ? WHERE plan_id = ? AND plan_version = ?")
+          .prepare(
+            "UPDATE plans SET superseded_by_version = ? WHERE plan_id = ? AND plan_version = ?",
+          )
           .run(valid.planVersion, valid.planId, head);
       }
     });
   }
 
   get(planId: string, planVersion: number): ExecutionPlan | null {
-    const row = this.database.prepare("SELECT * FROM plans WHERE plan_id = ? AND plan_version = ?").get(planId, planVersion);
+    const row = this.database
+      .prepare("SELECT * FROM plans WHERE plan_id = ? AND plan_version = ?")
+      .get(planId, planVersion);
     return row === undefined ? null : this.hydrate(row);
   }
 
@@ -53,7 +78,9 @@ export class SqlitePlanRepository implements PlanRepository {
   }
 
   getCurrentVersion(planId: string): number | null {
-    const row = this.database.prepare("SELECT current_version FROM plan_heads WHERE plan_id = ?").get(planId);
+    const row = this.database
+      .prepare("SELECT current_version FROM plan_heads WHERE plan_id = ?")
+      .get(planId);
     return row === undefined ? null : integer(row, "current_version");
   }
 
@@ -74,7 +101,9 @@ export class SqlitePlanRepository implements PlanRepository {
   private hydrate(row: SqlRow): ExecutionPlan {
     const plan = readBody(row, executionPlanSchema, "persistence.plans.read");
     if (plan.planId !== text(row, "plan_id") || plan.planVersion !== integer(row, "plan_version")) {
-      throw invalid("plan", "stored columns disagree with the stored body", { planId: plan.planId });
+      throw invalid("plan", "stored columns disagree with the stored body", {
+        planId: plan.planId,
+      });
     }
     return plan;
   }

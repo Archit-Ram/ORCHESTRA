@@ -9,14 +9,10 @@ import {
 export const CREATED_AT = "2026-10-23T10:00:00.000Z";
 export const UPDATED_AT = "2026-10-23T10:05:00.000Z";
 export const DEADLINE_AT = "2026-10-23T17:00:00.000Z";
-export const SHA256_A =
-  "a3f5c1d2e4b6978081726354453627189a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d";
+export const SHA256_A = "a3f5c1d2e4b6978081726354453627189a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d";
 
 /** Returns one failing issue list or fails the test if validation passed. */
-export function failureIssues(
-  schema: z.ZodTypeAny,
-  input: unknown,
-): readonly ValidationIssue[] {
+export function failureIssues(schema: z.ZodTypeAny, input: unknown): readonly ValidationIssue[] {
   const result = validateWithSchema(schema, input);
   if (result.ok) throw new Error("Expected validation to fail but it passed");
   return result.issues;
@@ -29,9 +25,7 @@ export function expectRejected(
   path: string,
   code: ValidationIssueCode,
 ): void {
-  const found = failureIssues(schema, input).map(
-    (issue) => `${issue.path}:${issue.code}`,
-  );
+  const found = failureIssues(schema, input).map((issue) => `${issue.path}:${issue.code}`);
   expect(found).toContain(`${path}:${code}`);
 }
 

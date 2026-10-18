@@ -30,12 +30,7 @@ export type Priority = (typeof PRIORITIES)[number];
 export const RISK_CLASSES = ["low", "medium", "high"] as const;
 export type RiskClass = (typeof RISK_CLASSES)[number];
 
-export const APPROVAL_STATUSES = [
-  "notRequired",
-  "pending",
-  "approved",
-  "rejected",
-] as const;
+export const APPROVAL_STATUSES = ["notRequired", "pending", "approved", "rejected"] as const;
 export type ApprovalStatus = (typeof APPROVAL_STATUSES)[number];
 
 export const SEVERITIES = ["hard", "soft"] as const;
@@ -60,11 +55,7 @@ export const EVIDENCE_TYPES = [
 ] as const;
 export type EvidenceType = (typeof EVIDENCE_TYPES)[number];
 
-export const EVIDENCE_RESULTS = [
-  "supportsSuccess",
-  "supportsFailure",
-  "inconclusive",
-] as const;
+export const EVIDENCE_RESULTS = ["supportsSuccess", "supportsFailure", "inconclusive"] as const;
 export type EvidenceResult = (typeof EVIDENCE_RESULTS)[number];
 
 export const SUBJECT_TYPES = ["commitment", "action"] as const;

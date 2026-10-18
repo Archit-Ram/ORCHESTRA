@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  ACTION_STATUSES,
-  APPROVAL_STATUSES,
-  RISK_CLASSES,
-} from "./enums.js";
+import { ACTION_STATUSES, APPROVAL_STATUSES, RISK_CLASSES } from "./enums.js";
 import {
   boundedJsonRecordSchema,
   checkTimestampOrder,

@@ -6,15 +6,15 @@ Runtime schemas live in `packages/domain/src/schemas/`; typed errors live in
 
 ## Boundary policy
 
-| Topic             | Policy                                                                                                                                            |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unknown fields    | **Rejected** (`.strict()` everywhere) with `UNRECOGNIZED_FIELD`. Nothing is silently dropped, so a model cannot smuggle e.g. `approvedByModel`.    |
-| Coercion          | **None.** `"1"` is not a version, `"5"` is not a duration, `NaN`/`Infinity` are rejected.                                                         |
-| Timestamps        | ISO-8601 with an **explicit timezone** (`Z` or `±hh:mm`), validated as a real calendar instant (no Feb 30, no `24:00`, no leap seconds, year ≥ 1900). Milliseconds at most. Use `normalizeToUtcIso` to store canonical UTC. |
-| Durations         | Whole minutes, `0 … 525600`.                                                                                                                      |
-| Identifiers       | 1–128 chars, `[A-Za-z0-9][A-Za-z0-9_.:-]*`.                                                                                                       |
-| Error messages    | Never echo the rejected value. Issues are `{ path, code, message }` with a stable `code`.                                                         |
-| Size bounds       | Arrays, strings, and the action `input` object (64 K characters serialized) are bounded.                                                          |
+| Topic          | Policy                                                                                                                                                                                                                      |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unknown fields | **Rejected** (`.strict()` everywhere) with `UNRECOGNIZED_FIELD`. Nothing is silently dropped, so a model cannot smuggle e.g. `approvedByModel`.                                                                             |
+| Coercion       | **None.** `"1"` is not a version, `"5"` is not a duration, `NaN`/`Infinity` are rejected.                                                                                                                                   |
+| Timestamps     | ISO-8601 with an **explicit timezone** (`Z` or `±hh:mm`), validated as a real calendar instant (no Feb 30, no `24:00`, no leap seconds, year ≥ 1900). Milliseconds at most. Use `normalizeToUtcIso` to store canonical UTC. |
+| Durations      | Whole minutes, `0 … 525600`.                                                                                                                                                                                                |
+| Identifiers    | 1–128 chars, `[A-Za-z0-9][A-Za-z0-9_.:-]*`.                                                                                                                                                                                 |
+| Error messages | Never echo the rejected value. Issues are `{ path, code, message }` with a stable `code`.                                                                                                                                   |
+| Size bounds    | Arrays, strings, and the action `input` object (64 K characters serialized) are bounded.                                                                                                                                    |
 
 ## Entry points
 
@@ -74,15 +74,15 @@ table, for example with a retry path out of `failed`.
 
 Add or update these rows (adjust to the file's existing table format):
 
-| Requirement                                                  | Status        | Evidence                                      |
-| ------------------------------------------------------------ | ------------- | --------------------------------------------- |
-| Domain schemas: commitment, action, invariant (Section 4)    | `tested`      | `pnpm test:unit` (packages/domain/tests)      |
-| Domain schemas: evidence, plan, verification result          | `tested`      | `pnpm test:unit`                              |
-| Approval record, event, and tool-result schemas              | `tested`      | `pnpm test:unit`                              |
-| Typed error taxonomy (Section 8.1)                           | `tested`      | `pnpm test:unit`                              |
-| Action/commitment status transition tables                   | `tested`      | `pnpm test:unit`                              |
-| Referential-integrity checks                                 | `tested`      | `pnpm test:unit`                              |
-| Graph cycle detection (Algorithm B)                          | `notStarted`  | Prompt 3                                      |
+| Requirement                                               | Status       | Evidence                                 |
+| --------------------------------------------------------- | ------------ | ---------------------------------------- |
+| Domain schemas: commitment, action, invariant (Section 4) | `tested`     | `pnpm test:unit` (packages/domain/tests) |
+| Domain schemas: evidence, plan, verification result       | `tested`     | `pnpm test:unit`                         |
+| Approval record, event, and tool-result schemas           | `tested`     | `pnpm test:unit`                         |
+| Typed error taxonomy (Section 8.1)                        | `tested`     | `pnpm test:unit`                         |
+| Action/commitment status transition tables                | `tested`     | `pnpm test:unit`                         |
+| Referential-integrity checks                              | `tested`     | `pnpm test:unit`                         |
+| Graph cycle detection (Algorithm B)                       | `notStarted` | Prompt 3                                 |
 
 Record `tested` only after `pnpm test:unit` has been run in the real repository
 with real Vitest.

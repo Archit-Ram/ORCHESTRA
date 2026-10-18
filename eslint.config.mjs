@@ -46,6 +46,25 @@ export default tseslint.config(
     },
   },
   {
+    files: ["**/tests/**/*.ts", "**/*.test.ts"],
+    rules: {
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/no-dynamic-delete": "off",
+    },
+  },
+  {
+    files: ["scripts/**/*.ts"],
+    rules: {
+      "no-console": "off",
+    },
+  },
+  {
+    files: ["packages/domain/src/schemas/**/*.ts"],
+    rules: {
+      "@typescript-eslint/explicit-function-return-type": "off",
+    },
+  },
+  {
     ignores: [
       "**/dist/**",
       "**/build/**",

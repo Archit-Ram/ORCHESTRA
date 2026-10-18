@@ -46,9 +46,7 @@ export function taggedMessage(code: ValidationIssueCode, text: string): string {
   return `[${code}] ${text}`;
 }
 
-function parseTaggedMessage(
-  message: string,
-): { code: ValidationIssueCode; text: string } | null {
+function parseTaggedMessage(message: string): { code: ValidationIssueCode; text: string } | null {
   const match = TAG_PATTERN.exec(message);
   const code = match?.[1];
   const text = match?.[2];
@@ -85,8 +83,7 @@ function mapRawIssue(raw: RawIssue): ValidationIssue {
 
   switch (raw.code) {
     case "invalid_type": {
-      const isMissing =
-        raw.received === "undefined" || /received undefined/.test(raw.message);
+      const isMissing = raw.received === "undefined" || /received undefined/.test(raw.message);
       return isMissing
         ? { path, code: "REQUIRED_FIELD_MISSING", message: "Field is required." }
         : { path, code: "INVALID_TYPE", message: "Value has the wrong type." };
@@ -136,12 +133,8 @@ function mapRawIssue(raw: RawIssue): ValidationIssue {
   }
 }
 
-function simplifyPath(
-  path: ReadonlyArray<PropertyKey>,
-): Array<string | number> {
-  return path.map((segment) =>
-    typeof segment === "number" ? segment : String(segment),
-  );
+function simplifyPath(path: ReadonlyArray<PropertyKey>): Array<string | number> {
+  return path.map((segment) => (typeof segment === "number" ? segment : String(segment)));
 }
 
 /**
@@ -180,10 +173,7 @@ export function addTaggedIssue(
 /**
  * Validates `input` without coercion or repair. Never throws for bad input.
  */
-export function validateWithSchema<T>(
-  schema: z.ZodType<T>,
-  input: unknown,
-): ValidationResult<T> {
+export function validateWithSchema<T>(schema: z.ZodType<T>, input: unknown): ValidationResult<T> {
   const result = schema.safeParse(input);
   if (result.success) return { ok: true, value: result.data };
   const issues = (result.error.issues as unknown as ReadonlyArray<RawIssue>)
@@ -196,11 +186,7 @@ export function validateWithSchema<T>(
  * Like {@link validateWithSchema} but throws `SCHEMA_VALIDATION_FAILED`.
  * `boundary` names where the data came from (e.g. "api.request").
  */
-export function parseOrThrow<T>(
-  schema: z.ZodType<T>,
-  input: unknown,
-  boundary: string,
-): T {
+export function parseOrThrow<T>(schema: z.ZodType<T>, input: unknown, boundary: string): T {
   const result = validateWithSchema(schema, input);
   if (result.ok) return result.value;
   throw new DomainError({

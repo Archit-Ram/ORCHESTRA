@@ -1,10 +1,5 @@
 import { z } from "zod";
-import {
-  COMMITMENT_STATUSES,
-  EVIDENCE_TYPES,
-  PRIORITIES,
-  VERIFICATION_MODES,
-} from "./enums.js";
+import { COMMITMENT_STATUSES, EVIDENCE_TYPES, PRIORITIES, VERIFICATION_MODES } from "./enums.js";
 import {
   boundedTextSchema,
   checkTimestampOrder,
@@ -32,12 +27,10 @@ export const successCriterionSchema = z
   .strict()
   .superRefine((criterion, ctx) => {
     for (const index of findDuplicateIndexes(criterion.requiredEvidenceTypes)) {
-      addTaggedIssue(
-        ctx,
-        "DUPLICATE_ID",
-        "Evidence type is listed twice.",
-        ["requiredEvidenceTypes", index],
-      );
+      addTaggedIssue(ctx, "DUPLICATE_ID", "Evidence type is listed twice.", [
+        "requiredEvidenceTypes",
+        index,
+      ]);
     }
     if (
       criterion.verificationMode === "requiresUserConfirmation" &&
@@ -70,9 +63,7 @@ export const commitmentSchema = z
   })
   .strict()
   .superRefine((commitment, ctx) => {
-    const criterionIds = commitment.successCriteria.map(
-      (criterion) => criterion.criterionId,
-    );
+    const criterionIds = commitment.successCriteria.map((criterion) => criterion.criterionId);
     for (const index of findDuplicateIndexes(criterionIds)) {
       addTaggedIssue(ctx, "DUPLICATE_ID", "Criterion ID is used twice.", [
         "successCriteria",

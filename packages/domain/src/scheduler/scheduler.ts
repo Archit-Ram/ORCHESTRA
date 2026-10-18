@@ -53,11 +53,7 @@ export interface ScheduleInput {
   readonly riskThresholdMinutes?: number;
 }
 
-export type StartConstraint =
-  | "planningStart"
-  | "releaseTime"
-  | "dependency"
-  | "resource";
+export type StartConstraint = "planningStart" | "releaseTime" | "dependency" | "resource";
 
 export interface ScheduledTask {
   readonly id: string;
@@ -78,9 +74,7 @@ export interface ScheduledTask {
   readonly risk: RiskLabel;
 }
 
-export type UnscheduledReason =
-  | "MISSING_DURATION"
-  | "BLOCKED_BY_UNSCHEDULED_DEPENDENCY";
+export type UnscheduledReason = "MISSING_DURATION" | "BLOCKED_BY_UNSCHEDULED_DEPENDENCY";
 
 export interface UnscheduledTask {
   readonly id: string;
@@ -200,7 +194,11 @@ function validateTasks(
 
   const planningStartMs = parseIsoTimestamp(input.planningStartAt);
   if (planningStartMs === null) {
-    add("INVALID_PLANNING_START", null, "planningStartAt must be an ISO-8601 timestamp with a timezone.");
+    add(
+      "INVALID_PLANNING_START",
+      null,
+      "planningStartAt must be an ISO-8601 timestamp with a timezone.",
+    );
   }
   if (!isValidRiskThreshold(threshold)) {
     add("INVALID_RISK_THRESHOLD", null, "riskThresholdMinutes must be a whole number of minutes.");
@@ -215,7 +213,11 @@ function validateTasks(
       add("INVALID_DEADLINE_KIND", task.id, "deadlineKind must be hard or soft.");
     }
     if (task.durationMinutes !== null && !isValidDuration(task.durationMinutes)) {
-      add("INVALID_DURATION", task.id, "Duration must be a whole number of minutes from 0 to 525600.");
+      add(
+        "INVALID_DURATION",
+        task.id,
+        "Duration must be a whole number of minutes from 0 to 525600.",
+      );
     }
     const range = task.durationRange;
     if (range !== undefined) {
@@ -227,12 +229,20 @@ function validateTasks(
         range.optimisticMinutes <= expected &&
         expected <= range.pessimisticMinutes;
       if (!rangeValid) {
-        add("INVALID_DURATION_RANGE", task.id, "Duration range needs optimistic <= expected <= pessimistic, all valid durations.");
+        add(
+          "INVALID_DURATION_RANGE",
+          task.id,
+          "Duration range needs optimistic <= expected <= pessimistic, all valid durations.",
+        );
       }
     }
     const releaseMs = task.releaseAt === null ? null : parseIsoTimestamp(task.releaseAt);
     if (task.releaseAt !== null && releaseMs === null) {
-      add("INVALID_RELEASE_TIME", task.id, "releaseAt must be an ISO-8601 timestamp with a timezone.");
+      add(
+        "INVALID_RELEASE_TIME",
+        task.id,
+        "releaseAt must be an ISO-8601 timestamp with a timezone.",
+      );
     }
     const deadlineMs = task.deadlineAt === null ? null : parseIsoTimestamp(task.deadlineAt);
     if (task.deadlineAt !== null && deadlineMs === null) {
@@ -336,7 +346,11 @@ export function generateSchedule(input: ScheduleInput): ScheduleResult {
         dependencyReadyMs = Math.max(dependencyReadyMs ?? placed.finishMs, placed.finishMs);
       }
       if (!ready) continue;
-      const startMs = Math.max(candidate.releaseMs ?? resourceFreeMs, dependencyReadyMs ?? resourceFreeMs, resourceFreeMs);
+      const startMs = Math.max(
+        candidate.releaseMs ?? resourceFreeMs,
+        dependencyReadyMs ?? resourceFreeMs,
+        resourceFreeMs,
+      );
 
       if (best === null || isBetter(candidate, startMs, id, best.prepared, best.startMs, best.id)) {
         best = { id, prepared: candidate, startMs, dependencyReadyMs };
@@ -349,7 +363,13 @@ export function generateSchedule(input: ScheduleInput): ScheduleResult {
     if (finishMs > MAX_INSTANT_MILLIS) {
       return {
         ok: false,
-        issues: [{ code: "TIME_OUT_OF_RANGE", taskId: best.id, message: "The schedule runs past the year 9999." }],
+        issues: [
+          {
+            code: "TIME_OUT_OF_RANGE",
+            taskId: best.id,
+            message: "The schedule runs past the year 9999.",
+          },
+        ],
         graphFailure: null,
       };
     }
@@ -406,14 +426,19 @@ export function generateSchedule(input: ScheduleInput): ScheduleResult {
     });
     for (const dependencyId of graph.dependenciesOf.get(scheduled.id) ?? []) {
       const dependency = placements.get(dependencyId);
-      if (dependency !== undefined && item.deadlineMs !== null && dependency.finishMs > item.deadlineMs) {
+      if (
+        dependency !== undefined &&
+        item.deadlineMs !== null &&
+        dependency.finishMs > item.deadlineMs
+      ) {
         findings.push({
           code: "DEPENDENCY_ENDS_AFTER_DEADLINE",
           taskId: scheduled.id,
           relatedTaskId: dependencyId,
           deadlineKind: scheduled.deadlineKind,
           lateByMinutes: null,
-          message: "A dependency finishes after this task's deadline, so the deadline cannot be met.",
+          message:
+            "A dependency finishes after this task's deadline, so the deadline cannot be met.",
         });
       }
     }
@@ -424,7 +449,9 @@ export function generateSchedule(input: ScheduleInput): ScheduleResult {
     const missingDuration = item.durationMs === null;
     const blockedBy = missingDuration
       ? null
-      : ((graph.dependenciesOf.get(id) ?? []).find((dependencyId) => !placements.has(dependencyId)) ?? null);
+      : ((graph.dependenciesOf.get(id) ?? []).find(
+          (dependencyId) => !placements.has(dependencyId),
+        ) ?? null);
     const assessment = classifyRiskFromMillis({
       deadlineMs: item.deadlineMs,
       finishMs: null,
@@ -450,7 +477,9 @@ export function generateSchedule(input: ScheduleInput): ScheduleResult {
     });
   }
 
-  const hasHardLateness = scheduledTasks.some((task) => task.isLate && task.deadlineKind === "hard");
+  const hasHardLateness = scheduledTasks.some(
+    (task) => task.isLate && task.deadlineKind === "hard",
+  );
   const feasibility: Feasibility = hasHardLateness
     ? "infeasible"
     : unscheduled.length > 0

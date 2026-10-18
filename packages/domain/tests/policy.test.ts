@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { DomainError } from "../src/errors/index.js";
-import { computeActionPayloadHash, computeSideEffectFingerprint, evaluateApproval } from "../src/policy/approval.js";
+import {
+  computeActionPayloadHash,
+  computeSideEffectFingerprint,
+  evaluateApproval,
+} from "../src/policy/approval.js";
 import { canonicalJson } from "../src/policy/canonical-json.js";
 import { sha256Hex } from "../src/policy/sha256.js";
-import { createToolCatalog, missingScopes, toolRequiresApproval, type ToolDefinition } from "../src/policy/tool-catalog.js";
+import {
+  createToolCatalog,
+  missingScopes,
+  toolRequiresApproval,
+  type ToolDefinition,
+} from "../src/policy/tool-catalog.js";
 import { approvalRecordSchema } from "../src/schemas/approval.js";
 import { validApproval } from "./helpers/fixtures.js";
 
@@ -12,8 +21,14 @@ describe("sha256Hex", () => {
   const vectors: ReadonlyArray<readonly [string, string]> = [
     ["", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
     ["abc", "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"],
-    ["abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq", "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1"],
-    ["The quick brown fox jumps over the lazy dog", "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"],
+    [
+      "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
+      "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
+    ],
+    [
+      "The quick brown fox jumps over the lazy dog",
+      "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+    ],
     ["a".repeat(55), "9f4390f8d30c2dd92ec9f095b65e2b9ae9b0a925a5258e241c9f1e910f734318"],
     ["a".repeat(56), "b35439a4ac6f0948b6d6f9e3c6af0f5f590ce20f1bde7090ef7970686ec6738a"],
     ["a".repeat(64), "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb"],
@@ -28,7 +43,9 @@ describe("sha256Hex", () => {
   }
 
   it("matches the NIST one-million-'a' vector", () => {
-    expect(sha256Hex("a".repeat(1_000_000))).toBe("cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0");
+    expect(sha256Hex("a".repeat(1_000_000))).toBe(
+      "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0",
+    );
   });
 
   it("treats lone surrogates as U+FFFD like a standard UTF-8 encoder", () => {
@@ -39,7 +56,9 @@ describe("sha256Hex", () => {
 
 describe("canonicalJson", () => {
   it("sorts keys at every depth and drops whitespace", () => {
-    expect(canonicalJson({ b: 1, a: { d: [3, 2], c: "x" } })).toBe('{"a":{"c":"x","d":[3,2]},"b":1}');
+    expect(canonicalJson({ b: 1, a: { d: [3, 2], c: "x" } })).toBe(
+      '{"a":{"c":"x","d":[3,2]},"b":1}',
+    );
   });
 
   it("is independent of key insertion order but not of array order", () => {
@@ -61,10 +80,21 @@ describe("canonicalJson", () => {
   it("rejects values that JSON.stringify would silently alter or drop", () => {
     const cyclic: Record<string, unknown> = {};
     cyclic["self"] = cyclic;
-    class Box { value = 1; }
+    class Box {
+      value = 1;
+    }
     const unsupported: unknown[] = [
-      { a: undefined }, Number.NaN, Number.POSITIVE_INFINITY, 10n, () => 1, Symbol("s"),
-      new Date(), new Map(), new Box(), cyclic, [undefined],
+      { a: undefined },
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      10n,
+      () => 1,
+      Symbol("s"),
+      new Date(),
+      new Map(),
+      new Box(),
+      cyclic,
+      [undefined],
     ];
     for (const value of unsupported) expect(() => canonicalJson(value)).toThrow(DomainError);
   });
@@ -83,19 +113,32 @@ describe("canonicalJson", () => {
 });
 
 describe("computeActionPayloadHash", () => {
-  const base = { actionId: "action_1", toolName: "sendEmail", input: { recipient: "a@example.com", documentId: "doc_1" } };
+  const base = {
+    actionId: "action_1",
+    toolName: "sendEmail",
+    input: { recipient: "a@example.com", documentId: "doc_1" },
+  };
 
   it("is a lowercase hex SHA-256 that ignores key order", () => {
     expect(computeActionPayloadHash(base)).toMatch(/^[a-f0-9]{64}$/);
-    expect(computeActionPayloadHash({ ...base, input: { documentId: "doc_1", recipient: "a@example.com" } })).toBe(computeActionPayloadHash(base));
+    expect(
+      computeActionPayloadHash({
+        ...base,
+        input: { documentId: "doc_1", recipient: "a@example.com" },
+      }),
+    ).toBe(computeActionPayloadHash(base));
   });
 
   it("changes when the action, tool, or any input value changes", () => {
     const original = computeActionPayloadHash(base);
     expect(computeActionPayloadHash({ ...base, actionId: "action_2" })).not.toBe(original);
     expect(computeActionPayloadHash({ ...base, toolName: "sendSms" })).not.toBe(original);
-    expect(computeActionPayloadHash({ ...base, input: { ...base.input, recipient: "b@example.com" } })).not.toBe(original);
-    expect(computeActionPayloadHash({ ...base, input: { ...base.input, extra: 1 } })).not.toBe(original);
+    expect(
+      computeActionPayloadHash({ ...base, input: { ...base.input, recipient: "b@example.com" } }),
+    ).not.toBe(original);
+    expect(computeActionPayloadHash({ ...base, input: { ...base.input, extra: 1 } })).not.toBe(
+      original,
+    );
   });
 
   it("produces a hash that the approval record schema accepts", () => {
@@ -104,8 +147,12 @@ describe("computeActionPayloadHash", () => {
   });
 
   it("builds a side-effect fingerprint that ignores the action ID", () => {
-    expect(computeSideEffectFingerprint(base)).toBe(computeSideEffectFingerprint({ ...base, actionId: "action_2" } as typeof base));
-    expect(computeSideEffectFingerprint(base)).not.toBe(computeSideEffectFingerprint({ ...base, input: {} }));
+    expect(computeSideEffectFingerprint(base)).toBe(
+      computeSideEffectFingerprint({ ...base, actionId: "action_2" } as typeof base),
+    );
+    expect(computeSideEffectFingerprint(base)).not.toBe(
+      computeSideEffectFingerprint({ ...base, input: {} }),
+    );
   });
 });
 
@@ -113,8 +160,14 @@ describe("tool catalog and tool policy", () => {
   const schema = z.object({}).strict();
   function tool(overrides: Partial<ToolDefinition> = {}): ToolDefinition {
     return {
-      toolName: "doThing", environment: "simulator", category: "write", riskClass: "medium",
-      isReversible: false, requiredScopes: ["things:write"], inputSchema: schema, ...overrides,
+      toolName: "doThing",
+      environment: "simulator",
+      category: "write",
+      riskClass: "medium",
+      isReversible: false,
+      requiredScopes: ["things:write"],
+      inputSchema: schema,
+      ...overrides,
     };
   }
 
@@ -133,7 +186,12 @@ describe("tool catalog and tool policy", () => {
   });
 
   it("requires approval for every high-impact category regardless of risk class", () => {
-    for (const category of ["externalCommunication", "purchase", "deletion", "accountChange"] as const) {
+    for (const category of [
+      "externalCommunication",
+      "purchase",
+      "deletion",
+      "accountChange",
+    ] as const) {
       for (const riskClass of ["low", "medium", "high"] as const) {
         expect(toolRequiresApproval(tool({ category, riskClass, isReversible: true }))).toBe(true);
       }
@@ -147,12 +205,18 @@ describe("tool catalog and tool policy", () => {
   it("lets read-only and low-risk reversible tools run automatically", () => {
     expect(toolRequiresApproval(tool({ category: "read", riskClass: "low" }))).toBe(false);
     expect(toolRequiresApproval(tool({ category: "read", riskClass: "medium" }))).toBe(false);
-    expect(toolRequiresApproval(tool({ category: "write", riskClass: "low", isReversible: true }))).toBe(false);
+    expect(
+      toolRequiresApproval(tool({ category: "write", riskClass: "low", isReversible: true })),
+    ).toBe(false);
   });
 
   it("requires approval for irreversible or medium-risk writes", () => {
-    expect(toolRequiresApproval(tool({ category: "write", riskClass: "low", isReversible: false }))).toBe(true);
-    expect(toolRequiresApproval(tool({ category: "write", riskClass: "medium", isReversible: true }))).toBe(true);
+    expect(
+      toolRequiresApproval(tool({ category: "write", riskClass: "low", isReversible: false })),
+    ).toBe(true);
+    expect(
+      toolRequiresApproval(tool({ category: "write", riskClass: "medium", isReversible: true })),
+    ).toBe(true);
   });
 
   it("reports missing scopes sorted", () => {
@@ -163,19 +227,40 @@ describe("tool catalog and tool policy", () => {
 });
 
 describe("evaluateApproval", () => {
-  const action = { actionId: "action_1", toolName: "sendEmail", input: { recipient: "a@example.com" } };
+  const action = {
+    actionId: "action_1",
+    toolName: "sendEmail",
+    input: { recipient: "a@example.com" },
+  };
   const NOW = Date.parse("2026-10-23T09:00:00.000Z");
   const hash = computeActionPayloadHash(action);
   const approval = (overrides: Record<string, unknown> = {}) =>
     approvalRecordSchema.parse({
-      ...validApproval(), approvalId: "approval_1", actionId: "action_1", planId: "plan_1", planVersion: 1,
-      payloadHash: hash, approverId: "user_1", decision: "approved",
-      decidedAt: "2026-10-23T08:00:00.000Z", expiresAt: "2026-10-23T18:00:00.000Z", ...overrides,
+      ...validApproval(),
+      approvalId: "approval_1",
+      actionId: "action_1",
+      planId: "plan_1",
+      planVersion: 1,
+      payloadHash: hash,
+      approverId: "user_1",
+      decision: "approved",
+      decidedAt: "2026-10-23T08:00:00.000Z",
+      expiresAt: "2026-10-23T18:00:00.000Z",
+      ...overrides,
     });
-  const evaluate = (approvals: ReturnType<typeof approval>[], extra: { consumed?: string[]; required?: boolean; approvers?: string[] } = {}) =>
+  const evaluate = (
+    approvals: ReturnType<typeof approval>[],
+    extra: { consumed?: string[]; required?: boolean; approvers?: string[] } = {},
+  ) =>
     evaluateApproval({
-      action, isApprovalRequired: extra.required ?? true, planId: "plan_1", planVersion: 1, approvals,
-      authorizedApproverIds: new Set(extra.approvers ?? ["user_1"]), consumedApprovalIds: new Set(extra.consumed ?? []), nowMs: NOW,
+      action,
+      isApprovalRequired: extra.required ?? true,
+      planId: "plan_1",
+      planVersion: 1,
+      approvals,
+      authorizedApproverIds: new Set(extra.approvers ?? ["user_1"]),
+      consumedApprovalIds: new Set(extra.consumed ?? []),
+      nowMs: NOW,
     });
 
   it("is notRequired when policy does not require approval, even with no records", () => {
@@ -198,22 +283,43 @@ describe("evaluateApproval", () => {
 
   it("only counts authorized approvers, and an unauthorized rejection cannot block", () => {
     expect(evaluate([approval({ approverId: "mallory" })]).status).toBe("unauthorizedApprover");
-    const mixed = evaluate([approval(), approval({ approvalId: "approval_2", approverId: "mallory", decision: "rejected", decidedAt: "2026-10-23T08:30:00.000Z" })]);
+    const mixed = evaluate([
+      approval(),
+      approval({
+        approvalId: "approval_2",
+        approverId: "mallory",
+        decision: "rejected",
+        decidedAt: "2026-10-23T08:30:00.000Z",
+      }),
+    ]);
     expect(mixed.status).toBe("approved");
   });
 
   it("lets the most recent decision win", () => {
     const early = approval({ approvalId: "a1", decidedAt: "2026-10-23T08:00:00.000Z" });
-    const late = (decision: "approved" | "rejected") => approval({ approvalId: "a2", decision, decidedAt: "2026-10-23T08:30:00.000Z" });
+    const late = (decision: "approved" | "rejected") =>
+      approval({ approvalId: "a2", decision, decidedAt: "2026-10-23T08:30:00.000Z" });
     expect(evaluate([early, late("rejected")]).status).toBe("rejected");
     expect(evaluate([late("rejected"), early]).status).toBe("rejected");
-    expect(evaluate([approval({ decision: "rejected" }), late("approved")]).status).toBe("approved");
+    expect(evaluate([approval({ decision: "rejected" }), late("approved")]).status).toBe(
+      "approved",
+    );
   });
 
   it("breaks decision-time ties by approval ID, highest wins", () => {
     const same = "2026-10-23T08:00:00.000Z";
-    expect(evaluate([approval({ approvalId: "approval_a", decidedAt: same }), approval({ approvalId: "approval_b", decision: "rejected", decidedAt: same })]).status).toBe("rejected");
-    expect(evaluate([approval({ approvalId: "approval_b", decidedAt: same }), approval({ approvalId: "approval_a", decision: "rejected", decidedAt: same })]).status).toBe("approved");
+    expect(
+      evaluate([
+        approval({ approvalId: "approval_a", decidedAt: same }),
+        approval({ approvalId: "approval_b", decision: "rejected", decidedAt: same }),
+      ]).status,
+    ).toBe("rejected");
+    expect(
+      evaluate([
+        approval({ approvalId: "approval_b", decidedAt: same }),
+        approval({ approvalId: "approval_a", decision: "rejected", decidedAt: same }),
+      ]).status,
+    ).toBe("approved");
   });
 
   it("rejects a different plan version", () => {
@@ -223,7 +329,14 @@ describe("evaluateApproval", () => {
   });
 
   it("rejects a changed payload", () => {
-    const result = evaluate([approval({ payloadHash: computeActionPayloadHash({ ...action, input: { recipient: "evil@example.com" } }) })]);
+    const result = evaluate([
+      approval({
+        payloadHash: computeActionPayloadHash({
+          ...action,
+          input: { recipient: "evil@example.com" },
+        }),
+      }),
+    ]);
     expect(result.status).toBe("payloadMismatch");
     expect(result.errorCode).toBe("APPROVAL_PAYLOAD_MISMATCH");
   });
@@ -236,7 +349,9 @@ describe("evaluateApproval", () => {
   });
 
   it("rejects approvals dated in the future", () => {
-    expect(evaluate([approval({ decidedAt: "2026-10-23T09:00:00.001Z" })]).status).toBe("notYetValid");
+    expect(evaluate([approval({ decidedAt: "2026-10-23T09:00:00.001Z" })]).status).toBe(
+      "notYetValid",
+    );
     expect(evaluate([approval({ decidedAt: "2026-10-23T09:00:00.000Z" })]).status).toBe("approved");
   });
 
@@ -247,7 +362,10 @@ describe("evaluateApproval", () => {
   });
 
   it("checks payload before expiry and replay, so tampering is reported as tampering", () => {
-    const tampered = approval({ payloadHash: "0".repeat(64), expiresAt: "2026-10-23T08:30:00.000Z" });
+    const tampered = approval({
+      payloadHash: "0".repeat(64),
+      expiresAt: "2026-10-23T08:30:00.000Z",
+    });
     expect(evaluate([tampered], { consumed: ["approval_1"] }).status).toBe("payloadMismatch");
   });
 });
@@ -270,9 +388,13 @@ function randomValue(random: () => number, depth: number): unknown {
   if (kind === 1) return `s${Math.floor(random() * 1000)}`;
   if (kind === 2) return random() < 0.5;
   if (kind === 3) return null;
-  if (kind === 4) return Array.from({ length: 1 + Math.floor(random() * 3) }, () => randomValue(random, depth + 1));
+  if (kind === 4)
+    return Array.from({ length: 1 + Math.floor(random() * 3) }, () =>
+      randomValue(random, depth + 1),
+    );
   const record: Record<string, unknown> = {};
-  for (let index = 0; index < 1 + Math.floor(random() * 4); index += 1) record[`k${Math.floor(random() * 6)}`] = randomValue(random, depth + 1);
+  for (let index = 0; index < 1 + Math.floor(random() * 4); index += 1)
+    record[`k${Math.floor(random() * 6)}`] = randomValue(random, depth + 1);
   return record;
 }
 
@@ -307,15 +429,41 @@ describe("generated payload tampering", () => {
       const random = createRandom(seed);
       const input = { payload: randomValue(random, 0), recipient: "a@example.com" };
       const action = { actionId: "action_1", toolName: "sendEmail", input };
-      const record = approvalRecordSchema.parse({ ...validApproval(), approvalId: "approval_1", actionId: "action_1", planId: "plan_1", planVersion: 1, payloadHash: computeActionPayloadHash(action), approverId: "user_1", decidedAt: "2026-10-23T08:00:00.000Z", expiresAt: "2026-10-23T18:00:00.000Z" });
-      const evaluateFor = (candidate: { actionId: string; toolName: string; input: Record<string, unknown> }) =>
-        evaluateApproval({ action: candidate, isApprovalRequired: true, planId: "plan_1", planVersion: 1, approvals: [record], authorizedApproverIds: new Set(["user_1"]), consumedApprovalIds: new Set(), nowMs: Date.parse("2026-10-23T09:00:00.000Z") });
+      const record = approvalRecordSchema.parse({
+        ...validApproval(),
+        approvalId: "approval_1",
+        actionId: "action_1",
+        planId: "plan_1",
+        planVersion: 1,
+        payloadHash: computeActionPayloadHash(action),
+        approverId: "user_1",
+        decidedAt: "2026-10-23T08:00:00.000Z",
+        expiresAt: "2026-10-23T18:00:00.000Z",
+      });
+      const evaluateFor = (candidate: {
+        actionId: string;
+        toolName: string;
+        input: Record<string, unknown>;
+      }) =>
+        evaluateApproval({
+          action: candidate,
+          isApprovalRequired: true,
+          planId: "plan_1",
+          planVersion: 1,
+          approvals: [record],
+          authorizedApproverIds: new Set(["user_1"]),
+          consumedApprovalIds: new Set(),
+          nowMs: Date.parse("2026-10-23T09:00:00.000Z"),
+        });
 
       expect({ seed, status: evaluateFor(action).status }).toEqual({ seed, status: "approved" });
       const reordered = { ...action, input: Object.fromEntries(Object.entries(input).reverse()) };
       expect({ seed, status: evaluateFor(reordered).status }).toEqual({ seed, status: "approved" });
       const tampered = { ...action, input: mutateOnce(input, random) as Record<string, unknown> };
-      expect({ seed, status: evaluateFor(tampered).status }).toEqual({ seed, status: "payloadMismatch" });
+      expect({ seed, status: evaluateFor(tampered).status }).toEqual({
+        seed,
+        status: "payloadMismatch",
+      });
     }
   });
 });

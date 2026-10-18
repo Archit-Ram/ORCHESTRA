@@ -1,10 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { DomainError } from "../../src/errors/index.js";
-import { LATEST_SCHEMA_VERSION, MIGRATIONS, migrate, migrationChecksum, type Migration } from "../../src/persistence/migrations.js";
+import {
+  LATEST_SCHEMA_VERSION,
+  MIGRATIONS,
+  migrate,
+  migrationChecksum,
+  type Migration,
+} from "../../src/persistence/migrations.js";
 import { openSqliteDatabase } from "../../src/persistence/sqlite-driver.js";
 import { translateSqliteError } from "../../src/persistence/sqlite-errors.js";
 import { TransactionManager } from "../../src/persistence/transaction.js";
-import { errorOf, openRaw, openStore, seedScenario, withTempDir, NOW } from "./helpers/persistence-fixtures.js";
+import {
+  errorOf,
+  openRaw,
+  openStore,
+  seedScenario,
+  withTempDir,
+  NOW,
+} from "./helpers/persistence-fixtures.js";
 
 function memory() {
   const database = openSqliteDatabase(":memory:");
@@ -51,17 +64,27 @@ describe("error translation", () => {
   it("maps constraint failures to typed errors without leaking values", () => {
     const { database } = memory();
     database.prepare("INSERT INTO t (id, n) VALUES (?, ?)").run("secret-id-123", 1);
-    const duplicate = errorOf(() => database.prepare("INSERT INTO t (id, n) VALUES (?, ?)").run("secret-id-123", 1));
+    const duplicate = errorOf(() =>
+      database.prepare("INSERT INTO t (id, n) VALUES (?, ?)").run("secret-id-123", 1),
+    );
     expect(duplicate.code).toBe("INVALID_INPUT");
     expect(JSON.stringify(duplicate.metadata)).not.toContain("secret-id-123");
-    expect(errorOf(() => database.prepare("INSERT INTO t (id, n) VALUES (?, ?)").run("b", 0)).code).toBe("INVALID_INPUT");
-    expect(errorOf(() => database.prepare("INSERT INTO t (id, n) VALUES (?, NULL)").run("c")).code).toBe("INVALID_INPUT");
+    expect(
+      errorOf(() => database.prepare("INSERT INTO t (id, n) VALUES (?, ?)").run("b", 0)).code,
+    ).toBe("INVALID_INPUT");
+    expect(
+      errorOf(() => database.prepare("INSERT INTO t (id, n) VALUES (?, NULL)").run("c")).code,
+    ).toBe("INVALID_INPUT");
   });
 
   it("maps a SQL syntax error to INTERNAL_ERROR and a bad binding to INTERNAL_ERROR", () => {
     const { database } = memory();
     expect(errorOf(() => database.prepare("SELEC nonsense")).code).toBe("INTERNAL_ERROR");
-    expect(errorOf(() => database.prepare("INSERT INTO t (id, n) VALUES (?, ?)").run("d", undefined as never)).code).toBe("INTERNAL_ERROR");
+    expect(
+      errorOf(() =>
+        database.prepare("INSERT INTO t (id, n) VALUES (?, ?)").run("d", undefined as never),
+      ).code,
+    ).toBe("INTERNAL_ERROR");
   });
 
   it("passes DomainErrors and foreign errors through unchanged", () => {
@@ -91,11 +114,17 @@ describe("error translation", () => {
 });
 
 describe("TransactionManager", () => {
-  const count = (database: ReturnType<typeof memory>["database"]) => Number(database.prepare("SELECT COUNT(*) AS c FROM t").get()?.["c"]);
+  const count = (database: ReturnType<typeof memory>["database"]) =>
+    Number(database.prepare("SELECT COUNT(*) AS c FROM t").get()?.["c"]);
 
   it("commits on success and returns the callback's value", () => {
     const { database, transactions } = memory();
-    expect(transactions.run(() => { database.prepare("INSERT INTO t VALUES ('a', 1)").run(); return "done"; })).toBe("done");
+    expect(
+      transactions.run(() => {
+        database.prepare("INSERT INTO t VALUES ('a', 1)").run();
+        return "done";
+      }),
+    ).toBe("done");
     expect(count(database)).toBe(1);
     expect(transactions.isActive).toBe(false);
   });
@@ -105,8 +134,14 @@ describe("TransactionManager", () => {
     const boom = new DomainError({ code: "POLICY_DENIED" });
     let thrown: unknown;
     try {
-      transactions.run(() => { database.prepare("INSERT INTO t VALUES ('a', 1)").run(); database.prepare("INSERT INTO t VALUES ('b', 1)").run(); throw boom; });
-    } catch (error) { thrown = error; }
+      transactions.run(() => {
+        database.prepare("INSERT INTO t VALUES ('a', 1)").run();
+        database.prepare("INSERT INTO t VALUES ('b', 1)").run();
+        throw boom;
+      });
+    } catch (error) {
+      thrown = error;
+    }
     expect(thrown).toBe(boom);
     expect(count(database)).toBe(0);
     expect(transactions.isActive).toBe(false);
@@ -114,10 +149,14 @@ describe("TransactionManager", () => {
 
   it("rolls back when a constraint fails midway, leaving no partial rows", () => {
     const { database, transactions } = memory();
-    expect(errorOf(() => transactions.run(() => {
-      database.prepare("INSERT INTO t VALUES ('a', 1)").run();
-      database.prepare("INSERT INTO t VALUES ('b', 0)").run();
-    })).code).toBe("INVALID_INPUT");
+    expect(
+      errorOf(() =>
+        transactions.run(() => {
+          database.prepare("INSERT INTO t VALUES ('a', 1)").run();
+          database.prepare("INSERT INTO t VALUES ('b', 0)").run();
+        }),
+      ).code,
+    ).toBe("INVALID_INPUT");
     expect(count(database)).toBe(0);
   });
 
@@ -125,34 +164,65 @@ describe("TransactionManager", () => {
     const { database, transactions } = memory();
     transactions.run(() => {
       database.prepare("INSERT INTO t VALUES ('outer', 1)").run();
-      expect(() => transactions.run(() => { database.prepare("INSERT INTO t VALUES ('inner', 1)").run(); throw new Error("inner fails"); })).toThrow();
+      expect(() =>
+        transactions.run(() => {
+          database.prepare("INSERT INTO t VALUES ('inner', 1)").run();
+          throw new Error("inner fails");
+        }),
+      ).toThrow();
       expect(transactions.isActive).toBe(true);
     });
-    expect(database.prepare("SELECT id FROM t").all().map((row) => row["id"])).toEqual(["outer"]);
+    expect(
+      database
+        .prepare("SELECT id FROM t")
+        .all()
+        .map((row) => row["id"]),
+    ).toEqual(["outer"]);
   });
 
   it("rolls back the outer work when an error escapes a nested transaction", () => {
     const { database, transactions } = memory();
-    expect(() => transactions.run(() => {
-      database.prepare("INSERT INTO t VALUES ('outer', 1)").run();
-      transactions.run(() => { database.prepare("INSERT INTO t VALUES ('inner', 1)").run(); });
-      throw new Error("outer fails");
-    })).toThrow();
+    expect(() =>
+      transactions.run(() => {
+        database.prepare("INSERT INTO t VALUES ('outer', 1)").run();
+        transactions.run(() => {
+          database.prepare("INSERT INTO t VALUES ('inner', 1)").run();
+        });
+        throw new Error("outer fails");
+      }),
+    ).toThrow();
     expect(count(database)).toBe(0);
   });
 
   it("supports deep nesting and recovers its depth after failures", () => {
     const { database, transactions } = memory();
-    transactions.run(() => transactions.run(() => transactions.run(() => { database.prepare("INSERT INTO t VALUES ('deep', 1)").run(); })));
+    transactions.run(() =>
+      transactions.run(() =>
+        transactions.run(() => {
+          database.prepare("INSERT INTO t VALUES ('deep', 1)").run();
+        }),
+      ),
+    );
     expect(count(database)).toBe(1);
-    expect(() => transactions.run(() => { throw new Error("x"); })).toThrow();
-    transactions.run(() => { database.prepare("INSERT INTO t VALUES ('after', 1)").run(); });
+    expect(() =>
+      transactions.run(() => {
+        throw new Error("x");
+      }),
+    ).toThrow();
+    transactions.run(() => {
+      database.prepare("INSERT INTO t VALUES ('after', 1)").run();
+    });
     expect(count(database)).toBe(2);
   });
 
   it("rejects an async callback instead of committing before it finishes", () => {
     const { database, transactions } = memory();
-    const failure = errorOf(() => transactions.run((() => Promise.resolve().then(() => database.prepare("INSERT INTO t VALUES ('late', 1)").run())) as never));
+    const failure = errorOf(() =>
+      transactions.run((() =>
+        Promise.resolve().then(() =>
+          database.prepare("INSERT INTO t VALUES ('late', 1)").run(),
+        )) as never),
+    );
     expect(failure.code).toBe("INTERNAL_ERROR");
     expect(count(database)).toBe(0);
     expect(transactions.isActive).toBe(false);
@@ -176,7 +246,19 @@ describe("TransactionManager", () => {
 });
 
 describe("migrations", () => {
-  const TABLES = ["commitments", "events", "plan_heads", "plans", "actions", "action_transitions", "approvals", "approval_consumptions", "evidence", "executions", "schema_migrations"];
+  const TABLES = [
+    "commitments",
+    "events",
+    "plan_heads",
+    "plans",
+    "actions",
+    "action_transitions",
+    "approvals",
+    "approval_consumptions",
+    "evidence",
+    "executions",
+    "schema_migrations",
+  ];
 
   it("creates the full schema on a fresh database and records the migration", () => {
     const store = openStore();
@@ -192,7 +274,10 @@ describe("migrations", () => {
     withTempDir((temp) => {
       openStore(temp.file("schema.db")).close();
       const raw = openRaw(temp.file("schema.db"));
-      const names = raw.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((row) => String(row["name"]));
+      const names = raw
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+        .all()
+        .map((row) => String(row["name"]));
       for (const table of TABLES) expect(names).toContain(table);
       raw.close();
     });
@@ -227,7 +312,11 @@ describe("migrations", () => {
     withTempDir((temp) => {
       openStore(temp.file("new.db")).close();
       const raw = openRaw(temp.file("new.db"));
-      raw.prepare("INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (99, 'future', 'x', ?)").run(NOW);
+      raw
+        .prepare(
+          "INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (99, 'future', 'x', ?)",
+        )
+        .run(NOW);
       raw.close();
       const failure = errorOf(() => openStore(temp.file("new.db")));
       expect(failure.code).toBe("PERSISTENCE_UNAVAILABLE");
@@ -238,14 +327,33 @@ describe("migrations", () => {
   it("applies later migrations in order and leaves no partial schema when one fails", () => {
     const database = openSqliteDatabase(":memory:");
     const transactions = new TransactionManager(database);
-    const good: Migration = { version: 1, name: "a", sql: "CREATE TABLE a (id TEXT PRIMARY KEY) STRICT;" };
-    const second: Migration = { version: 2, name: "b", sql: "CREATE TABLE b (id TEXT PRIMARY KEY) STRICT;" };
-    const broken: Migration = { version: 3, name: "c", sql: "CREATE TABLE c (id TEXT PRIMARY KEY) STRICT; CREATE TABLE a (id TEXT);" };
+    const good: Migration = {
+      version: 1,
+      name: "a",
+      sql: "CREATE TABLE a (id TEXT PRIMARY KEY) STRICT;",
+    };
+    const second: Migration = {
+      version: 2,
+      name: "b",
+      sql: "CREATE TABLE b (id TEXT PRIMARY KEY) STRICT;",
+    };
+    const broken: Migration = {
+      version: 3,
+      name: "c",
+      sql: "CREATE TABLE c (id TEXT PRIMARY KEY) STRICT; CREATE TABLE a (id TEXT);",
+    };
     expect(migrate(database, transactions, NOW, [good, second]).appliedVersions).toEqual([1, 2]);
-    expect(errorOf(() => migrate(database, transactions, NOW, [good, second, broken])).code).toBe("INTERNAL_ERROR");
-    const tables = database.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((row) => String(row["name"]));
+    expect(errorOf(() => migrate(database, transactions, NOW, [good, second, broken])).code).toBe(
+      "INTERNAL_ERROR",
+    );
+    const tables = database
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+      .all()
+      .map((row) => String(row["name"]));
     expect(tables).not.toContain("c");
-    expect(database.prepare("SELECT MAX(version) AS v FROM schema_migrations").get()?.["v"]).toBe(2);
+    expect(database.prepare("SELECT MAX(version) AS v FROM schema_migrations").get()?.["v"]).toBe(
+      2,
+    );
     expect(migrationChecksum(good)).toMatch(/^[a-f0-9]{64}$/);
   });
 
@@ -258,7 +366,9 @@ describe("migrations", () => {
       expect(() => openStore(temp.file("close.db"))).toThrow(DomainError);
       // The failed open must not keep the file locked.
       const again = openRaw(temp.file("close.db"));
-      again.exec("UPDATE schema_migrations SET checksum = (SELECT checksum FROM schema_migrations LIMIT 1)");
+      again.exec(
+        "UPDATE schema_migrations SET checksum = (SELECT checksum FROM schema_migrations LIMIT 1)",
+      );
       again.close();
     });
   });

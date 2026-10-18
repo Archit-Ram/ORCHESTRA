@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { RULE_TYPES } from "../src/schemas/enums.js";
 import { invariantSchema } from "../src/schemas/invariant.js";
-import {
-  expectAccepted,
-  expectRejected,
-  validInvariant,
-} from "./helpers/fixtures.js";
+import { expectAccepted, expectRejected, validInvariant } from "./helpers/fixtures.js";
 
 const WINDOW = {
   startAt: "2026-10-23T15:00:00.000Z",
@@ -17,8 +13,15 @@ const VALID_PARAMETERS: Record<string, Record<string, unknown>> = {
   approvalRequired: { actionId: "action_send_report" },
   protectedTimeWindow: WINDOW,
   recipientAllowList: { toolName: "sendEmail", allowedRecipients: ["rahul@example.com"] },
-  deadline: { subjectType: "commitment", subjectId: "commitment_report_delivery", deadlineAt: "2026-10-23T17:00:00.000Z" },
-  dependencySatisfied: { actionId: "action_send_report", requiredActionIds: ["action_finalize_report"] },
+  deadline: {
+    subjectType: "commitment",
+    subjectId: "commitment_report_delivery",
+    deadlineAt: "2026-10-23T17:00:00.000Z",
+  },
+  dependencySatisfied: {
+    actionId: "action_send_report",
+    requiredActionIds: ["action_finalize_report"],
+  },
   noDuplicateSideEffect: { toolName: "sendEmail" },
 };
 
@@ -49,7 +52,11 @@ describe("invariantSchema", () => {
   it("rejects missing parameter fields for the rule type", () => {
     expectRejected(
       invariantSchema,
-      { ...validInvariant(), ruleType: "protectedTimeWindow", parameters: { startAt: WINDOW.startAt, endAt: WINDOW.endAt } },
+      {
+        ...validInvariant(),
+        ruleType: "protectedTimeWindow",
+        parameters: { startAt: WINDOW.startAt, endAt: WINDOW.endAt },
+      },
       "parameters.prohibitedToolNames",
       "REQUIRED_FIELD_MISSING",
     );
@@ -79,13 +86,21 @@ describe("invariantSchema", () => {
   it("rejects a protected window that ends before or when it starts", () => {
     expectRejected(
       invariantSchema,
-      { ...validInvariant(), ruleType: "protectedTimeWindow", parameters: { ...WINDOW, endAt: WINDOW.startAt } },
+      {
+        ...validInvariant(),
+        ruleType: "protectedTimeWindow",
+        parameters: { ...WINDOW, endAt: WINDOW.startAt },
+      },
       "parameters.endAt",
       "INVALID_ORDER",
     );
     expectRejected(
       invariantSchema,
-      { ...validInvariant(), ruleType: "protectedTimeWindow", parameters: { ...WINDOW, endAt: "2026-10-23T14:00:00.000Z" } },
+      {
+        ...validInvariant(),
+        ruleType: "protectedTimeWindow",
+        parameters: { ...WINDOW, endAt: "2026-10-23T14:00:00.000Z" },
+      },
       "parameters.endAt",
       "INVALID_ORDER",
     );
@@ -94,13 +109,21 @@ describe("invariantSchema", () => {
   it("rejects malformed timestamps and tool names inside parameters", () => {
     expectRejected(
       invariantSchema,
-      { ...validInvariant(), ruleType: "protectedTimeWindow", parameters: { ...WINDOW, startAt: "3 PM" } },
+      {
+        ...validInvariant(),
+        ruleType: "protectedTimeWindow",
+        parameters: { ...WINDOW, startAt: "3 PM" },
+      },
       "parameters.startAt",
       "INVALID_TIMESTAMP",
     );
     expectRejected(
       invariantSchema,
-      { ...validInvariant(), ruleType: "protectedTimeWindow", parameters: { ...WINDOW, prohibitedToolNames: ["Send Email"] } },
+      {
+        ...validInvariant(),
+        ruleType: "protectedTimeWindow",
+        parameters: { ...WINDOW, prohibitedToolNames: ["Send Email"] },
+      },
       "parameters.prohibitedToolNames[0]",
       "INVALID_FORMAT",
     );
@@ -109,14 +132,23 @@ describe("invariantSchema", () => {
   it("rejects an empty recipient allow-list", () => {
     expectRejected(
       invariantSchema,
-      { ...validInvariant(), ruleType: "recipientAllowList", parameters: { toolName: "sendEmail", allowedRecipients: [] } },
+      {
+        ...validInvariant(),
+        ruleType: "recipientAllowList",
+        parameters: { toolName: "sendEmail", allowedRecipients: [] },
+      },
       "parameters.allowedRecipients",
       "OUT_OF_RANGE",
     );
   });
 
   it("rejects bad severity and extra fields", () => {
-    expectRejected(invariantSchema, { ...validInvariant(), severity: "medium" }, "severity", "INVALID_ENUM_VALUE");
+    expectRejected(
+      invariantSchema,
+      { ...validInvariant(), severity: "medium" },
+      "severity",
+      "INVALID_ENUM_VALUE",
+    );
     expectRejected(invariantSchema, { ...validInvariant(), code: "x" }, "$", "UNRECOGNIZED_FIELD");
   });
 

@@ -47,11 +47,11 @@ constraints held the task back (`planningStart`, `releaseTime`, `dependency`,
 Per schedule: `findings` (`DEADLINE_MISSED`, `DEPENDENCY_ENDS_AFTER_DEADLINE`,
 `MISSING_DURATION`, `BLOCKED_BY_UNSCHEDULED_DEPENDENCY`), `completionAt`, and:
 
-| `feasibility` | Meaning                                                                         |
-| ------------- | ------------------------------------------------------------------------------- |
-| `infeasible`  | at least one **hard** deadline is missed                                        |
-| `unknown`     | no hard miss, but some task could not be scheduled (missing information)        |
-| `feasible`    | everything scheduled and no hard miss (soft lateness is listed in `findings`)   |
+| `feasibility` | Meaning                                                                       |
+| ------------- | ----------------------------------------------------------------------------- |
+| `infeasible`  | at least one **hard** deadline is missed                                      |
+| `unknown`     | no hard miss, but some task could not be scheduled (missing information)      |
+| `feasible`    | everything scheduled and no hard miss (soft lateness is listed in `findings`) |
 
 `assertFeasible` throws `SCHEDULE_INFEASIBLE` unless the result is `feasible`.
 `toScheduleSummary` produces the plan's `ScheduleSummary`.
@@ -130,11 +130,11 @@ Ambiguity maps to `AMBIGUOUS_REQUEST` (ask the user); other failures to
 
 ## Suggested lines for `docs/implementation-status.md`
 
-| Requirement                                        | Status       | Evidence                              |
-| -------------------------------------------------- | ------------ | ------------------------------------- |
-| Algorithm C: deterministic serial scheduler        | `tested`     | `pnpm test:unit` (scheduler tests)    |
-| Algorithm D: slack and risk classification         | `tested`     | `pnpm test:unit` (risk tests)         |
-| Timezone-safe local-time resolution                | `tested`     | `pnpm test:unit` (time-zone tests)    |
-| Algorithm E: plan verifier                         | `notStarted` | Prompt 5                              |
+| Requirement                                 | Status       | Evidence                           |
+| ------------------------------------------- | ------------ | ---------------------------------- |
+| Algorithm C: deterministic serial scheduler | `tested`     | `pnpm test:unit` (scheduler tests) |
+| Algorithm D: slack and risk classification  | `tested`     | `pnpm test:unit` (risk tests)      |
+| Timezone-safe local-time resolution         | `tested`     | `pnpm test:unit` (time-zone tests) |
+| Algorithm E: plan verifier                  | `notStarted` | Prompt 5                           |
 
 Mark `tested` only after `pnpm test:unit` passes in the real repository.

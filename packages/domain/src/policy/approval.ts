@@ -68,7 +68,10 @@ const OUTCOMES: Readonly<
   notRequired: { errorCode: null, message: "Approval is not required." },
   approved: { errorCode: null, message: "A valid approval is on record." },
   missing: { errorCode: "APPROVAL_REQUIRED", message: "No approval is on record for this action." },
-  rejected: { errorCode: "POLICY_DENIED", message: "The most recent decision rejected this action." },
+  rejected: {
+    errorCode: "POLICY_DENIED",
+    message: "The most recent decision rejected this action.",
+  },
   expired: { errorCode: "APPROVAL_EXPIRED", message: "The approval has expired." },
   notYetValid: { errorCode: "POLICY_DENIED", message: "The approval is dated in the future." },
   payloadMismatch: {
@@ -83,7 +86,10 @@ const OUTCOMES: Readonly<
     errorCode: "POLICY_DENIED",
     message: "Only decisions by authorized approvers count, and none is on record.",
   },
-  replayed: { errorCode: "POLICY_DENIED", message: "This approval was already used for an execution." },
+  replayed: {
+    errorCode: "POLICY_DENIED",
+    message: "This approval was already used for an execution.",
+  },
 };
 
 function outcome(status: ApprovalEvaluationStatus, approvalId: string | null): ApprovalEvaluation {
@@ -119,7 +125,8 @@ export function evaluateApproval(input: ApprovalEvaluationInput): ApprovalEvalua
   if (byAuthorized.length === 0) return outcome("unauthorizedApprover", null);
 
   const latest = [...byAuthorized].sort((left, right) => {
-    const byTime = (parseIsoTimestamp(right.decidedAt) ?? 0) - (parseIsoTimestamp(left.decidedAt) ?? 0);
+    const byTime =
+      (parseIsoTimestamp(right.decidedAt) ?? 0) - (parseIsoTimestamp(left.decidedAt) ?? 0);
     if (byTime !== 0) return byTime;
     return left.approvalId < right.approvalId ? 1 : left.approvalId > right.approvalId ? -1 : 0;
   })[0] as ApprovalRecord;

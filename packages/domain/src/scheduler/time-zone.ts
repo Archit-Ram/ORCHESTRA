@@ -41,8 +41,7 @@ export type LocalTimeResolution =
       readonly candidatesUtc: readonly string[];
     };
 
-const LOCAL_PATTERN =
-  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
+const LOCAL_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
 const TIMEZONE_NAME_PATTERN = /^[A-Za-z0-9_+\-/:.]{1,64}$/;
 const MIN_YEAR = 1900;
 const MAX_YEAR = 9999;
@@ -102,10 +101,7 @@ function offsetMillisAt(formatter: Intl.DateTimeFormat, instantMillis: number): 
 }
 
 /** UTC offset in minutes for a zone at a UTC instant, or `null` if unknown. */
-export function getUtcOffsetMinutes(
-  timeZone: string,
-  instantUtc: string,
-): number | null {
+export function getUtcOffsetMinutes(timeZone: string, instantUtc: string): number | null {
   const formatter = getFormatter(timeZone);
   const millis = Date.parse(instantUtc);
   if (formatter === null || Number.isNaN(millis)) return null;
@@ -113,10 +109,7 @@ export function getUtcOffsetMinutes(
 }
 
 /** Formats a UTC instant as local `YYYY-MM-DDTHH:mm:ss` in a zone, or `null`. */
-export function toLocalDateTimeString(
-  timeZone: string,
-  instantUtc: string,
-): string | null {
+export function toLocalDateTimeString(timeZone: string, instantUtc: string): string | null {
   const formatter = getFormatter(timeZone);
   const millis = Date.parse(instantUtc);
   if (formatter === null || Number.isNaN(millis)) return null;

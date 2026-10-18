@@ -94,7 +94,11 @@ describe("generateSchedule: basics", () => {
   });
 
   it("schedules a chain in dependency order", () => {
-    const s = schedule([task("c", { deps: ["b"], duration: 5 }), task("b", { deps: ["a"], duration: 5 }), task("a", { duration: 5 })]);
+    const s = schedule([
+      task("c", { deps: ["b"], duration: 5 }),
+      task("b", { deps: ["a"], duration: 5 }),
+      task("a", { duration: 5 }),
+    ]);
     expect(ids(s)).toEqual(["a", "b", "c"]);
     expect(byId(s, "c").startAt).toBe(at(10));
     expect(byId(s, "b").dependencyReadyAt).toBe(at(5));
@@ -112,7 +116,11 @@ describe("generateSchedule: basics", () => {
   });
 
   it("explains waiting for the resource and for dependencies", () => {
-    const s = schedule([task("a", { duration: 10 }), task("b", { duration: 10 }), task("c", { deps: ["a"], duration: 10 })]);
+    const s = schedule([
+      task("a", { duration: 10 }),
+      task("b", { duration: 10 }),
+      task("c", { deps: ["a"], duration: 10 }),
+    ]);
     expect(byId(s, "b").startConstraints).toEqual(["resource"]);
     expect(byId(s, "c").startConstraints).toEqual(["resource"]);
     const chain = schedule([task("a"), task("b", { deps: ["a"] })]);
@@ -149,7 +157,10 @@ describe("generateSchedule: selection order", () => {
   });
 
   it("puts a task with a deadline before one without, even at lower priority", () => {
-    const s = schedule([task("a", { priority: "critical" }), task("z", { priority: "low", deadline: at(500) })]);
+    const s = schedule([
+      task("a", { priority: "critical" }),
+      task("z", { priority: "low", deadline: at(500) }),
+    ]);
     expect(ids(s)).toEqual(["z", "a"]);
   });
 
@@ -166,7 +177,10 @@ describe("generateSchedule: selection order", () => {
 
   it("breaks equal deadline and priority by earliest start", () => {
     const deadline = at(500);
-    const s = schedule([task("a", { deadline, release: at(30) }), task("b", { deadline, release: at(0) })]);
+    const s = schedule([
+      task("a", { deadline, release: at(30) }),
+      task("b", { deadline, release: at(0) }),
+    ]);
     expect(ids(s)).toEqual(["b", "a"]);
   });
 
@@ -175,7 +189,10 @@ describe("generateSchedule: selection order", () => {
   });
 
   it("treats equal instants written in different timezones as equal deadlines", () => {
-    const s = schedule([task("b", { deadline: "2026-10-23T14:30:00+05:30" }), task("a", { deadline: "2026-10-23T09:00:00.000Z" })]);
+    const s = schedule([
+      task("b", { deadline: "2026-10-23T14:30:00+05:30" }),
+      task("a", { deadline: "2026-10-23T09:00:00.000Z" }),
+    ]);
     expect(ids(s)).toEqual(["a", "b"]);
   });
 
@@ -197,13 +214,26 @@ describe("generateSchedule: selection order", () => {
     ];
     const expected = JSON.stringify(schedule(tasks));
     expect(JSON.stringify(schedule([...tasks].reverse()))).toBe(expected);
-    expect(JSON.stringify(schedule([tasks[2] as ScheduleTask, tasks[0] as ScheduleTask, tasks[3] as ScheduleTask, tasks[1] as ScheduleTask]))).toBe(expected);
+    expect(
+      JSON.stringify(
+        schedule([
+          tasks[2] as ScheduleTask,
+          tasks[0] as ScheduleTask,
+          tasks[3] as ScheduleTask,
+          tasks[1] as ScheduleTask,
+        ]),
+      ),
+    ).toBe(expected);
   });
 });
 
 describe("generateSchedule: zero-duration tasks", () => {
   it("starts and finishes at the same instant without advancing the resource", () => {
-    const s = schedule([task("a", { duration: 30 }), task("m", { deps: ["a"], duration: 0 }), task("b", { deps: ["m"], duration: 10 })]);
+    const s = schedule([
+      task("a", { duration: 30 }),
+      task("m", { deps: ["a"], duration: 0 }),
+      task("b", { deps: ["m"], duration: 10 }),
+    ]);
     expect(byId(s, "m").startAt).toBe(at(30));
     expect(byId(s, "m").finishAt).toBe(at(30));
     expect(byId(s, "b").startAt).toBe(at(30));
@@ -259,9 +289,15 @@ describe("generateSchedule: deadlines, slack and risk", () => {
   });
 
   it("classifies slack just above and below the default threshold", () => {
-    expect(byId(schedule([task("a", { duration: 30, deadline: at(60) })]), "a").risk).toBe("atRisk");
-    expect(byId(schedule([task("a", { duration: 29, deadline: at(60) })]), "a").risk).toBe("onTrack");
-    expect(byId(schedule([task("a", { duration: 31, deadline: at(60) })]), "a").risk).toBe("atRisk");
+    expect(byId(schedule([task("a", { duration: 30, deadline: at(60) })]), "a").risk).toBe(
+      "atRisk",
+    );
+    expect(byId(schedule([task("a", { duration: 29, deadline: at(60) })]), "a").risk).toBe(
+      "onTrack",
+    );
+    expect(byId(schedule([task("a", { duration: 31, deadline: at(60) })]), "a").risk).toBe(
+      "atRisk",
+    );
   });
 
   it("uses a configured threshold", () => {
@@ -279,7 +315,10 @@ describe("generateSchedule: deadlines, slack and risk", () => {
   });
 
   it("explains a dependency that ends after the dependent's deadline", () => {
-    const s = schedule([task("a", { duration: 120 }), task("b", { deps: ["a"], duration: 10, deadline: at(60) })]);
+    const s = schedule([
+      task("a", { duration: 120 }),
+      task("b", { deps: ["a"], duration: 10, deadline: at(60) }),
+    ]);
     expect(s.findings.map((f) => `${f.code}:${f.taskId}:${f.relatedTaskId}`)).toEqual([
       "DEADLINE_MISSED:b:null",
       "DEPENDENCY_ENDS_AFTER_DEADLINE:b:a",
@@ -288,8 +327,14 @@ describe("generateSchedule: deadlines, slack and risk", () => {
   });
 
   it("measures lateness in elapsed time across a daylight-saving change", () => {
-    const planning = resolveLocalDateTime({ localDateTime: "2026-11-01T00:00", timeZone: "America/New_York" });
-    const deadline = resolveLocalDateTime({ localDateTime: "2026-11-01T17:00", timeZone: "America/New_York" });
+    const planning = resolveLocalDateTime({
+      localDateTime: "2026-11-01T00:00",
+      timeZone: "America/New_York",
+    });
+    const deadline = resolveLocalDateTime({
+      localDateTime: "2026-11-01T17:00",
+      timeZone: "America/New_York",
+    });
     if (!planning.ok || !deadline.ok) throw new Error("expected resolution");
     const result = generateSchedule({
       planningStartAt: planning.instantUtc,
@@ -329,7 +374,10 @@ describe("generateSchedule: missing information", () => {
   });
 
   it("is infeasible rather than unknown when a hard deadline is already missed elsewhere", () => {
-    const s = schedule([task("a", { duration: null }), task("b", { duration: 100, deadline: at(10) })]);
+    const s = schedule([
+      task("a", { duration: null }),
+      task("b", { duration: 100, deadline: at(10) }),
+    ]);
     expect(s.feasibility).toBe("infeasible");
   });
 });
@@ -345,13 +393,20 @@ describe("generateSchedule: invalid input", () => {
 
   it("rejects malformed timestamps everywhere they appear", () => {
     expect(failure([task("a")], "tomorrow").issues[0]?.code).toBe("INVALID_PLANNING_START");
-    expect(failure([task("a")], "2026-10-23T09:00:00").issues[0]?.code).toBe("INVALID_PLANNING_START");
+    expect(failure([task("a")], "2026-10-23T09:00:00").issues[0]?.code).toBe(
+      "INVALID_PLANNING_START",
+    );
     expect(failure([task("a", { release: "soon" })]).issues[0]?.code).toBe("INVALID_RELEASE_TIME");
-    expect(failure([task("a", { deadline: "2026-13-01T00:00:00Z" })]).issues[0]?.code).toBe("INVALID_DEADLINE");
+    expect(failure([task("a", { deadline: "2026-13-01T00:00:00Z" })]).issues[0]?.code).toBe(
+      "INVALID_DEADLINE",
+    );
   });
 
   it("reports every field issue together in stable order", () => {
-    const result = failure([task("b", { duration: -1, deadline: "x" }), task("a", { release: "y" })], "bad");
+    const result = failure(
+      [task("b", { duration: -1, deadline: "x" }), task("a", { release: "y" })],
+      "bad",
+    );
     expect(result.issues.map((i) => `${i.code}:${i.taskId}`)).toEqual([
       "INVALID_PLANNING_START:null",
       "INVALID_DURATION:b",
@@ -363,13 +418,18 @@ describe("generateSchedule: invalid input", () => {
   it("rejects an invalid threshold, priority and deadline kind", () => {
     const bad = (value: Partial<Record<"priority" | "deadlineKind", string>>) =>
       ({ ...task("a"), ...value }) as unknown as ScheduleTask;
-    expect(generateSchedule({ planningStartAt: START, tasks: [task("a")], riskThresholdMinutes: -5 }).ok).toBe(false);
+    expect(
+      generateSchedule({ planningStartAt: START, tasks: [task("a")], riskThresholdMinutes: -5 }).ok,
+    ).toBe(false);
     expect(failure([bad({ priority: "urgent" })]).issues[0]?.code).toBe("INVALID_PRIORITY");
     expect(failure([bad({ deadlineKind: "firm" })]).issues[0]?.code).toBe("INVALID_DEADLINE_KIND");
   });
 
   it("rejects schedules that run past year 9999", () => {
-    const result = generateSchedule({ planningStartAt: "9999-12-31T23:00:00.000Z", tasks: [task("a", { duration: 120 })] });
+    const result = generateSchedule({
+      planningStartAt: "9999-12-31T23:00:00.000Z",
+      tasks: [task("a", { duration: 120 })],
+    });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.issues[0]?.code).toBe("TIME_OUT_OF_RANGE");
   });
@@ -381,7 +441,9 @@ describe("generateSchedule: invalid input", () => {
   });
 
   it("rejects a cycle and a self-dependency and a duplicate ID", () => {
-    expect(failure([task("a", { deps: ["b"] }), task("b", { deps: ["a"] })]).graphFailure?.cycle).toEqual(["a", "b"]);
+    expect(
+      failure([task("a", { deps: ["b"] }), task("b", { deps: ["a"] })]).graphFailure?.cycle,
+    ).toEqual(["a", "b"]);
     expect(failure([task("a", { deps: ["a"] })]).graphFailure?.issues[0]?.code).toBe("SELF_LOOP");
     expect(failure([task("a"), task("a")]).graphFailure?.issues[0]?.code).toBe("DUPLICATE_NODE_ID");
   });
@@ -390,7 +452,12 @@ describe("generateSchedule: invalid input", () => {
 describe("duration scenarios", () => {
   const tasks = [
     task("a", { duration: 60, range: { optimisticMinutes: 30, pessimisticMinutes: 120 } }),
-    task("b", { deps: ["a"], duration: 30, deadline: at(100), range: { optimisticMinutes: 20, pessimisticMinutes: 60 } }),
+    task("b", {
+      deps: ["a"],
+      duration: 30,
+      deadline: at(100),
+      range: { optimisticMinutes: 20, pessimisticMinutes: 60 },
+    }),
     task("c", { duration: 10 }),
   ];
 
@@ -407,16 +474,25 @@ describe("duration scenarios", () => {
   });
 
   it("rejects an invalid range", () => {
-    const bad = task("a", { duration: 60, range: { optimisticMinutes: 90, pessimisticMinutes: 120 } });
+    const bad = task("a", {
+      duration: 60,
+      range: { optimisticMinutes: 90, pessimisticMinutes: 120 },
+    });
     expect(failure([bad]).issues[0]?.code).toBe("INVALID_DURATION_RANGE");
-    const unknownExpected = task("a", { duration: null, range: { optimisticMinutes: 1, pessimisticMinutes: 2 } });
+    const unknownExpected = task("a", {
+      duration: null,
+      range: { optimisticMinutes: 1, pessimisticMinutes: 2 },
+    });
     expect(failure([unknownExpected]).issues[0]?.code).toBe("INVALID_DURATION_RANGE");
   });
 });
 
 describe("integration helpers", () => {
   it("produces a summary that satisfies the plan schema", () => {
-    const s = schedule([task("a", { duration: 90, deadline: at(60) }), task("b", { duration: 10 })]);
+    const s = schedule([
+      task("a", { duration: 90, deadline: at(60) }),
+      task("b", { duration: 10 }),
+    ]);
     const summary = toScheduleSummary(s);
     expectAccepted(scheduleSummarySchema, summary);
     expect(summary).toEqual({
@@ -431,15 +507,28 @@ describe("integration helpers", () => {
   });
 
   it("maps failures to typed errors", () => {
-    expect(scheduleFailureToDomainError(failure([task("a", { deps: ["b"] }), task("b", { deps: ["a"] })])).code).toBe("GRAPH_CYCLE_DETECTED");
-    expect(scheduleFailureToDomainError(failure([task("a", { duration: -1 })])).code).toBe("INVALID_INPUT");
-    expect(() => generateScheduleOrThrow({ planningStartAt: START, tasks: [task("a", { deps: ["a"] })] })).toThrow(DomainError);
-    expect(generateScheduleOrThrow({ planningStartAt: START, tasks: [task("a")] }).tasks).toHaveLength(1);
+    expect(
+      scheduleFailureToDomainError(
+        failure([task("a", { deps: ["b"] }), task("b", { deps: ["a"] })]),
+      ).code,
+    ).toBe("GRAPH_CYCLE_DETECTED");
+    expect(scheduleFailureToDomainError(failure([task("a", { duration: -1 })])).code).toBe(
+      "INVALID_INPUT",
+    );
+    expect(() =>
+      generateScheduleOrThrow({ planningStartAt: START, tasks: [task("a", { deps: ["a"] })] }),
+    ).toThrow(DomainError);
+    expect(
+      generateScheduleOrThrow({ planningStartAt: START, tasks: [task("a")] }).tasks,
+    ).toHaveLength(1);
   });
 
   it("assertFeasible throws SCHEDULE_INFEASIBLE unless fully feasible", () => {
     expect(() => assertFeasible(schedule([task("a")]))).not.toThrow();
-    for (const infeasible of [schedule([task("a", { duration: 100, deadline: at(10) })]), schedule([task("a", { duration: null })])]) {
+    for (const infeasible of [
+      schedule([task("a", { duration: 100, deadline: at(10) })]),
+      schedule([task("a", { duration: null })]),
+    ]) {
       let thrown: unknown;
       try {
         assertFeasible(infeasible);
@@ -451,9 +540,16 @@ describe("integration helpers", () => {
   });
 
   it("builds tasks from planned actions using the highest commitment priority", () => {
-    const send = plannedActionSchema.parse({ ...validAction(), commitmentIds: ["c_low", "c_high"] });
+    const send = plannedActionSchema.parse({
+      ...validAction(),
+      commitmentIds: ["c_low", "c_high"],
+    });
     const finalize = plannedActionSchema.parse(validFinalizeAction());
-    const priorities = new Map([["c_low", "low" as const], ["c_high", "high" as const], ["commitment_report_delivery", "normal" as const]]);
+    const priorities = new Map([
+      ["c_low", "low" as const],
+      ["c_high", "high" as const],
+      ["commitment_report_delivery", "normal" as const],
+    ]);
     const tasks = actionsToScheduleTasks([send, finalize], priorities);
     expect(tasks[0]).toEqual({
       id: "action_send_report",
@@ -465,7 +561,9 @@ describe("integration helpers", () => {
       priority: "high",
     });
     expect(tasks[1]?.priority).toBe("normal");
-    expect(actionsToScheduleTasks([send], priorities, { deadlineKind: "soft" })[0]?.deadlineKind).toBe("soft");
+    expect(
+      actionsToScheduleTasks([send], priorities, { deadlineKind: "soft" })[0]?.deadlineKind,
+    ).toBe("soft");
     const scheduled = schedule(tasks);
     expect(ids(scheduled)).toEqual(["action_finalize_report", "action_send_report"]);
   });

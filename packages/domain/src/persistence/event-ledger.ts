@@ -18,7 +18,9 @@ export class SqliteEventLedger implements EventLedger {
     const valid = parseOrThrow(externalEventSchema, event, "persistence.events.ingest");
     const contentHash = sha256Hex(canonicalJson(valid));
     return this.transactions.run((): IngestResult => {
-      const existing = this.database.prepare("SELECT content_hash, applied_at FROM events WHERE event_id = ?").get(valid.eventId);
+      const existing = this.database
+        .prepare("SELECT content_hash, applied_at FROM events WHERE event_id = ?")
+        .get(valid.eventId);
       if (existing !== undefined) {
         if (text(existing, "content_hash") !== contentHash) {
           throw new DomainError({
@@ -33,7 +35,17 @@ export class SqliteEventLedger implements EventLedger {
         .prepare(
           "INSERT INTO events (event_id, event_type, source, occurred_at, correlation_id, environment, content_hash, body, received_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
-        .run(valid.eventId, valid.eventType, valid.source, valid.occurredAt, valid.correlationId, valid.environment, contentHash, JSON.stringify(valid), receivedAt);
+        .run(
+          valid.eventId,
+          valid.eventType,
+          valid.source,
+          valid.occurredAt,
+          valid.correlationId,
+          valid.environment,
+          contentHash,
+          JSON.stringify(valid),
+          receivedAt,
+        );
       return { status: "recorded" };
     });
   }
@@ -44,7 +56,12 @@ export class SqliteEventLedger implements EventLedger {
   }
 
   require(eventId: string): StoredEvent {
-    return this.get(eventId) ?? (() => { throw notFound("event", eventId); })();
+    return (
+      this.get(eventId) ??
+      (() => {
+        throw notFound("event", eventId);
+      })()
+    );
   }
 
   listUnapplied(): StoredEvent[] {
@@ -63,7 +80,9 @@ export class SqliteEventLedger implements EventLedger {
 
   markApplied(eventId: string, at: string, summary: string | null): boolean {
     const result = this.database
-      .prepare("UPDATE events SET applied_at = ?, apply_summary = ? WHERE event_id = ? AND applied_at IS NULL")
+      .prepare(
+        "UPDATE events SET applied_at = ?, apply_summary = ? WHERE event_id = ? AND applied_at IS NULL",
+      )
       .run(at, summary, eventId);
     return result.changes === 1;
   }
@@ -72,8 +91,18 @@ export class SqliteEventLedger implements EventLedger {
     const event = readBody(row, externalEventSchema, "persistence.events.read");
     const contentHash = text(row, "content_hash");
     if (sha256Hex(canonicalJson(event)) !== contentHash) {
-      throw new DomainError({ code: "INTERNAL_ERROR", userMessage: "A stored record is damaged.", metadata: { entity: "event", eventId: event.eventId } });
+      throw new DomainError({
+        code: "INTERNAL_ERROR",
+        userMessage: "A stored record is damaged.",
+        metadata: { entity: "event", eventId: event.eventId },
+      });
     }
-    return { event, contentHash, receivedAt: text(row, "received_at"), appliedAt: textOrNull(row, "applied_at"), applySummary: textOrNull(row, "apply_summary") };
+    return {
+      event,
+      contentHash,
+      receivedAt: text(row, "received_at"),
+      appliedAt: textOrNull(row, "applied_at"),
+      applySummary: textOrNull(row, "apply_summary"),
+    };
   }
 }

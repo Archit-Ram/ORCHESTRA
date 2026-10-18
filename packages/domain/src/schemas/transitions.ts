@@ -11,9 +11,7 @@ import type { ActionStatus, CommitmentStatus } from "./enums.js";
  * schema rule on `PlannedAction` ensures a stored record never claims a side
  * effect for an unapproved action.
  */
-export const ACTION_TRANSITIONS: Readonly<
-  Record<ActionStatus, readonly ActionStatus[]>
-> = {
+export const ACTION_TRANSITIONS: Readonly<Record<ActionStatus, readonly ActionStatus[]>> = {
   proposed: ["ready", "cancelled"],
   ready: ["awaitingApproval", "running", "cancelled"],
   awaitingApproval: ["running", "cancelled"],
@@ -41,18 +39,12 @@ export const COMMITMENT_TRANSITIONS: Readonly<
   cancelled: [],
 };
 
-export function canTransitionAction(
-  from: ActionStatus,
-  to: ActionStatus,
-): boolean {
+export function canTransitionAction(from: ActionStatus, to: ActionStatus): boolean {
   return ACTION_TRANSITIONS[from].includes(to);
 }
 
 /** Throws `ACTION_STATE_CONFLICT` when the transition is not permitted. */
-export function assertActionTransition(
-  from: ActionStatus,
-  to: ActionStatus,
-): void {
+export function assertActionTransition(from: ActionStatus, to: ActionStatus): void {
   if (!canTransitionAction(from, to)) {
     throw new DomainError({
       code: "ACTION_STATE_CONFLICT",
@@ -61,18 +53,12 @@ export function assertActionTransition(
   }
 }
 
-export function canTransitionCommitment(
-  from: CommitmentStatus,
-  to: CommitmentStatus,
-): boolean {
+export function canTransitionCommitment(from: CommitmentStatus, to: CommitmentStatus): boolean {
   return COMMITMENT_TRANSITIONS[from].includes(to);
 }
 
 /** Throws `INVALID_INPUT` when the commitment transition is not permitted. */
-export function assertCommitmentTransition(
-  from: CommitmentStatus,
-  to: CommitmentStatus,
-): void {
+export function assertCommitmentTransition(from: CommitmentStatus, to: CommitmentStatus): void {
   if (!canTransitionCommitment(from, to)) {
     throw new DomainError({
       code: "INVALID_INPUT",

@@ -55,12 +55,9 @@ export const executionPlanSchema = z
   .strict()
   .superRefine((plan, ctx) => {
     if (plan.planVersion === 1 && plan.parentPlanVersion !== null) {
-      addTaggedIssue(
-        ctx,
-        "INCONSISTENT_STATE",
-        "The first plan version cannot have a parent.",
-        ["parentPlanVersion"],
-      );
+      addTaggedIssue(ctx, "INCONSISTENT_STATE", "The first plan version cannot have a parent.", [
+        "parentPlanVersion",
+      ]);
     }
     if (plan.planVersion > 1) {
       if (plan.parentPlanVersion === null) {
@@ -71,12 +68,9 @@ export const executionPlanSchema = z
           ["parentPlanVersion"],
         );
       } else if (plan.parentPlanVersion >= plan.planVersion) {
-        addTaggedIssue(
-          ctx,
-          "INVALID_ORDER",
-          "The parent version must be lower than planVersion.",
-          ["parentPlanVersion"],
-        );
+        addTaggedIssue(ctx, "INVALID_ORDER", "The parent version must be lower than planVersion.", [
+          "parentPlanVersion",
+        ]);
       }
     }
 
@@ -104,12 +98,12 @@ export const executionPlanSchema = z
       });
       action.commitmentIds.forEach((commitmentId, commitmentIndex) => {
         if (!knownCommitmentIds.has(commitmentId)) {
-          addTaggedIssue(
-            ctx,
-            "UNRESOLVED_REFERENCE",
-            "Commitment is not part of this plan.",
-            ["actions", actionIndex, "commitmentIds", commitmentIndex],
-          );
+          addTaggedIssue(ctx, "UNRESOLVED_REFERENCE", "Commitment is not part of this plan.", [
+            "actions",
+            actionIndex,
+            "commitmentIds",
+            commitmentIndex,
+          ]);
         }
       });
     });

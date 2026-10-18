@@ -20,9 +20,7 @@ describe("error catalog", () => {
     for (const code of ERROR_CODES) {
       const entry = ERROR_CATALOG[code];
       expect(entry.userMessage.length).toBeGreaterThan(0);
-      expect(["retryable", "nonRetryable", "retryAfterReconcile"]).toContain(
-        entry.retryability,
-      );
+      expect(["retryable", "nonRetryable", "retryAfterReconcile"]).toContain(entry.retryability);
     }
   });
 

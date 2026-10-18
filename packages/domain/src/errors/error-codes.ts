@@ -28,11 +28,7 @@ export const ERROR_CODES = [
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
-export const RETRYABILITIES = [
-  "retryable",
-  "nonRetryable",
-  "retryAfterReconcile",
-] as const;
+export const RETRYABILITIES = ["retryable", "nonRetryable", "retryAfterReconcile"] as const;
 
 /**
  * - `retryable`: the same request may succeed later (transient condition).
@@ -115,8 +111,7 @@ export const ERROR_CATALOG: Readonly<Record<ErrorCode, ErrorCatalogEntry>> = {
   },
   ACTION_OUTCOME_UNKNOWN: {
     retryability: "retryAfterReconcile",
-    userMessage:
-      "It is not known whether the action took effect; it must be checked first.",
+    userMessage: "It is not known whether the action took effect; it must be checked first.",
   },
   PERSISTENCE_UNAVAILABLE: {
     retryability: "retryable",

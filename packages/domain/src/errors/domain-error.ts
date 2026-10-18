@@ -1,8 +1,4 @@
-import {
-  ERROR_CATALOG,
-  type ErrorCode,
-  type Retryability,
-} from "./error-codes.js";
+import { ERROR_CATALOG, type ErrorCode, type Retryability } from "./error-codes.js";
 
 const MAX_STRING_LENGTH = 200;
 const MAX_ARRAY_LENGTH = 50;
@@ -11,10 +7,7 @@ const MAX_USER_MESSAGE_LENGTH = 300;
 
 const SECRET_KEY_PATTERN =
   /(token|secret|password|passwd|authorization|api[-_]?key|credential|cookie|session[-_]?id)/i;
-const SECRET_VALUE_PATTERNS: readonly RegExp[] = [
-  /^Bearer\s+\S+/i,
-  /AKIA[0-9A-Z]{16}/,
-];
+const SECRET_VALUE_PATTERNS: readonly RegExp[] = [/^Bearer\s+\S+/i, /AKIA[0-9A-Z]{16}/];
 
 const REDACTED = "[REDACTED]";
 
@@ -39,15 +32,11 @@ function sanitizeValue(value: unknown, depth: number): unknown {
     return Number.isNaN(value.getTime()) ? null : value.toISOString();
   }
   if (Array.isArray(value)) {
-    return value
-      .slice(0, MAX_ARRAY_LENGTH)
-      .map((item: unknown) => sanitizeValue(item, depth + 1));
+    return value.slice(0, MAX_ARRAY_LENGTH).map((item: unknown) => sanitizeValue(item, depth + 1));
   }
   const output: Record<string, unknown> = {};
   for (const [key, child] of Object.entries(value as object)) {
-    output[key] = SECRET_KEY_PATTERN.test(key)
-      ? REDACTED
-      : sanitizeValue(child, depth + 1);
+    output[key] = SECRET_KEY_PATTERN.test(key) ? REDACTED : sanitizeValue(child, depth + 1);
   }
   return output;
 }

@@ -77,12 +77,8 @@ describe("parseIsoTimestamp", () => {
 
 describe("normalizeToUtcIso", () => {
   it("converts offsets to canonical UTC", () => {
-    expect(normalizeToUtcIso("2026-10-23T22:30:00+05:30")).toBe(
-      "2026-10-23T17:00:00.000Z",
-    );
-    expect(normalizeToUtcIso("2026-10-23T09:00:00-08:00")).toBe(
-      "2026-10-23T17:00:00.000Z",
-    );
+    expect(normalizeToUtcIso("2026-10-23T22:30:00+05:30")).toBe("2026-10-23T17:00:00.000Z");
+    expect(normalizeToUtcIso("2026-10-23T09:00:00-08:00")).toBe("2026-10-23T17:00:00.000Z");
   });
 
   it("returns null for invalid input", () => {

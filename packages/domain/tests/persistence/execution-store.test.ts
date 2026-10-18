@@ -4,18 +4,61 @@ import { runIfAllowed } from "../../src/verifier/execution-gate.js";
 import { validEvidence } from "../helpers/fixtures.js";
 import { FINALIZE_ID, SEND_ID } from "../helpers/verifier-fixtures.js";
 import {
-  completeFinalize, contextFromStore, errorOf, gateFor, grantFor, LATER, openStore, readySendWithApproval, seedScenario, withTempDir,
+  completeFinalize,
+  contextFromStore,
+  errorOf,
+  gateFor,
+  grantFor,
+  LATER,
+  openStore,
+  readySendWithApproval,
+  seedScenario,
+  withTempDir,
 } from "./helpers/persistence-fixtures.js";
 import { evaluateExecutionGate } from "../../src/verifier/execution-gate.js";
 
 const KEY = "idem_send_report_0001";
 const PLAN_ID_FOR_RACE = "plan_report_delivery";
-const ready = () => { const store = openStore(); seedScenario(store); completeFinalize(store); readySendWithApproval(store); return store; };
-const begin = (store: ReturnType<typeof ready>, grant = grantFor(store), expectedActionVersion?: number) =>
-  store.beginExecution({ grant, expectedActionVersion: expectedActionVersion ?? store.actions.require(SEND_ID).version, at: LATER, correlationId: "corr_exec" });
-const evidence = (overrides: Record<string, unknown> = {}) => evidenceRecordSchema.parse({ ...validEvidence(), evidenceId: "evidence_exec", correlationId: "corr_exec", ...overrides });
-const finish = (store: ReturnType<typeof ready>, outcome: "succeeded" | "failed" | "outcomeUnknown", extra: Record<string, unknown> = {}) =>
-  store.finishExecution({ idempotencyKey: KEY, outcome, expectedActionVersion: store.actions.require(SEND_ID).version, at: "2026-10-23T10:31:00.000Z", correlationId: "corr_exec", reason: `execution_${outcome}`, providerReference: "sim_ref_1", ...extra } as never);
+const ready = () => {
+  const store = openStore();
+  seedScenario(store);
+  completeFinalize(store);
+  readySendWithApproval(store);
+  return store;
+};
+const begin = (
+  store: ReturnType<typeof ready>,
+  grant = grantFor(store),
+  expectedActionVersion?: number,
+) =>
+  store.beginExecution({
+    grant,
+    expectedActionVersion: expectedActionVersion ?? store.actions.require(SEND_ID).version,
+    at: LATER,
+    correlationId: "corr_exec",
+  });
+const evidence = (overrides: Record<string, unknown> = {}) =>
+  evidenceRecordSchema.parse({
+    ...validEvidence(),
+    evidenceId: "evidence_exec",
+    correlationId: "corr_exec",
+    ...overrides,
+  });
+const finish = (
+  store: ReturnType<typeof ready>,
+  outcome: "succeeded" | "failed" | "outcomeUnknown",
+  extra: Record<string, unknown> = {},
+) =>
+  store.finishExecution({
+    idempotencyKey: KEY,
+    outcome,
+    expectedActionVersion: store.actions.require(SEND_ID).version,
+    at: "2026-10-23T10:31:00.000Z",
+    correlationId: "corr_exec",
+    reason: `execution_${outcome}`,
+    providerReference: "sim_ref_1",
+    ...extra,
+  } as never);
 
 function snapshot(store: ReturnType<typeof ready>) {
   return JSON.stringify({
@@ -32,11 +75,23 @@ describe("beginExecution", () => {
     const store = ready();
     const { action, execution } = begin(store);
     expect(action).toMatchObject({ status: "running", approvalStatus: "approved" });
-    expect(execution).toMatchObject({ idempotencyKey: KEY, actionId: SEND_ID, status: "running", approvalId: "approval_0001", planVersion: 1, correlationId: "corr_exec", finishedAt: null });
+    expect(execution).toMatchObject({
+      idempotencyKey: KEY,
+      actionId: SEND_ID,
+      status: "running",
+      approvalId: "approval_0001",
+      planVersion: 1,
+      correlationId: "corr_exec",
+      finishedAt: null,
+    });
     expect([...store.approvals.listConsumedIds()]).toEqual(["approval_0001"]);
     expect(store.executions.recordedKeys().get(KEY)).toBe(SEND_ID);
     const history = store.actions.getTransitions(SEND_ID);
-    expect(history[history.length - 1]).toMatchObject({ toStatus: "running", reason: "executionStarted", correlationId: "corr_exec" });
+    expect(history[history.length - 1]).toMatchObject({
+      toStatus: "running",
+      reason: "executionStarted",
+      correlationId: "corr_exec",
+    });
   });
 
   it("makes the real gate deny a second run of the same action", () => {
@@ -63,7 +118,9 @@ describe("beginExecution", () => {
   it("rolls back completely when the approval cannot be spent", () => {
     const store = ready();
     const before = snapshot(store);
-    expect(errorOf(() => begin(store, { ...grantFor(store), approvalId: "approval_ghost" })).code).toBe("INVALID_INPUT");
+    expect(
+      errorOf(() => begin(store, { ...grantFor(store), approvalId: "approval_ghost" })).code,
+    ).toBe("INVALID_INPUT");
     expect(snapshot(store)).toBe(before);
     expect(store.executions.get(KEY)).toBeNull();
   });
@@ -71,7 +128,9 @@ describe("beginExecution", () => {
   it("rolls back completely when an approval-required action has no approval in the grant", () => {
     const store = ready();
     const before = snapshot(store);
-    expect(errorOf(() => begin(store, { ...grantFor(store), approvalId: null })).code).toBe("SCHEMA_VALIDATION_FAILED");
+    expect(errorOf(() => begin(store, { ...grantFor(store), approvalId: null })).code).toBe(
+      "SCHEMA_VALIDATION_FAILED",
+    );
     expect(snapshot(store)).toBe(before);
     expect(store.executions.get(KEY)).toBeNull();
     expect(store.actions.require(SEND_ID).status).toBe("ready");
@@ -80,14 +139,19 @@ describe("beginExecution", () => {
   it("rejects a grant whose payload hash no longer matches the stored action", () => {
     const store = ready();
     const before = snapshot(store);
-    expect(errorOf(() => begin(store, { ...grantFor(store), payloadHash: "0".repeat(64) })).code).toBe("APPROVAL_PAYLOAD_MISMATCH");
+    expect(
+      errorOf(() => begin(store, { ...grantFor(store), payloadHash: "0".repeat(64) })).code,
+    ).toBe("APPROVAL_PAYLOAD_MISMATCH");
     expect(snapshot(store)).toBe(before);
   });
 
   it("rejects a grant carrying a different idempotency key", () => {
     const store = ready();
     const before = snapshot(store);
-    expect(errorOf(() => begin(store, { ...grantFor(store), idempotencyKey: "idem_someone_else_1" })).code).toBe("IDEMPOTENCY_CONFLICT");
+    expect(
+      errorOf(() => begin(store, { ...grantFor(store), idempotencyKey: "idem_someone_else_1" }))
+        .code,
+    ).toBe("IDEMPOTENCY_CONFLICT");
     expect(snapshot(store)).toBe(before);
   });
 
@@ -103,15 +167,33 @@ describe("beginExecution", () => {
   it("works for an action that needs no approval, spending nothing", () => {
     const store = openStore();
     seedScenario(store);
-    const finalizeGate = evaluateExecutionGate({ actionId: FINALIZE_ID, context: contextFromStore(store) });
+    const finalizeGate = evaluateExecutionGate({
+      actionId: FINALIZE_ID,
+      context: contextFromStore(store),
+    });
     // The finalize action is still proposed, so the gate refuses until it is made ready.
     expect(finalizeGate.allowed).toBe(false);
     const current = store.actions.require(FINALIZE_ID);
-    store.actions.apply({ actionId: FINALIZE_ID, expectedVersion: current.version, toStatus: "ready", at: LATER, correlationId: "c", reason: "ready" });
-    const decision = evaluateExecutionGate({ actionId: FINALIZE_ID, context: contextFromStore(store) });
+    store.actions.apply({
+      actionId: FINALIZE_ID,
+      expectedVersion: current.version,
+      toStatus: "ready",
+      at: LATER,
+      correlationId: "c",
+      reason: "ready",
+    });
+    const decision = evaluateExecutionGate({
+      actionId: FINALIZE_ID,
+      context: contextFromStore(store),
+    });
     if (!decision.allowed) throw new Error(JSON.stringify(decision.violations));
     expect(decision.grant.approvalId).toBeNull();
-    const started = store.beginExecution({ grant: decision.grant, expectedActionVersion: 2, at: LATER, correlationId: "corr_f" });
+    const started = store.beginExecution({
+      grant: decision.grant,
+      expectedActionVersion: 2,
+      at: LATER,
+      correlationId: "corr_f",
+    });
     expect(started.action.status).toBe("running");
     expect(started.execution.approvalId).toBeNull();
     expect(store.approvals.listConsumedIds().size).toBe(0);
@@ -124,9 +206,20 @@ describe("finishExecution", () => {
     begin(store);
     const { action, execution } = finish(store, "succeeded", { evidence: evidence() });
     expect(action.status).toBe("succeeded");
-    expect(execution).toMatchObject({ status: "succeeded", providerReference: "sim_ref_1", finishedAt: "2026-10-23T10:31:00.000Z" });
-    expect(store.evidence.listForSubject("action", SEND_ID).map((e) => e.evidenceId)).toEqual(["evidence_exec"]);
-    expect(store.actions.getTransitions(SEND_ID).map((h) => h.toStatus)).toEqual(["proposed", "ready", "running", "succeeded"]);
+    expect(execution).toMatchObject({
+      status: "succeeded",
+      providerReference: "sim_ref_1",
+      finishedAt: "2026-10-23T10:31:00.000Z",
+    });
+    expect(store.evidence.listForSubject("action", SEND_ID).map((e) => e.evidenceId)).toEqual([
+      "evidence_exec",
+    ]);
+    expect(store.actions.getTransitions(SEND_ID).map((h) => h.toStatus)).toEqual([
+      "proposed",
+      "ready",
+      "running",
+      "succeeded",
+    ]);
   });
 
   it("records a definite failure", () => {
@@ -140,9 +233,19 @@ describe("finishExecution", () => {
     const store = ready();
     begin(store);
     const before = snapshot(store);
-    expect(errorOf(() => finish(store, "succeeded", { evidence: { ...evidence(), result: "maybe" } })).code).toBe("SCHEMA_VALIDATION_FAILED");
-    expect(errorOf(() => finish(store, "succeeded", { evidence: evidence({ subjectId: FINALIZE_ID }) })).code).toBe("INVALID_INPUT");
-    expect(errorOf(() => finish(store, "succeeded", { evidence: evidence({ subjectType: "commitment" }) })).code).toBe("INVALID_INPUT");
+    expect(
+      errorOf(() => finish(store, "succeeded", { evidence: { ...evidence(), result: "maybe" } }))
+        .code,
+    ).toBe("SCHEMA_VALIDATION_FAILED");
+    expect(
+      errorOf(() => finish(store, "succeeded", { evidence: evidence({ subjectId: FINALIZE_ID }) }))
+        .code,
+    ).toBe("INVALID_INPUT");
+    expect(
+      errorOf(() =>
+        finish(store, "succeeded", { evidence: evidence({ subjectType: "commitment" }) }),
+      ).code,
+    ).toBe("INVALID_INPUT");
     expect(snapshot(store)).toBe(before);
     expect(store.actions.require(SEND_ID).status).toBe("running");
     expect(store.executions.require(KEY).status).toBe("running");
@@ -153,7 +256,9 @@ describe("finishExecution", () => {
     store.evidence.append(evidence());
     begin(store);
     const before = snapshot(store);
-    expect(errorOf(() => finish(store, "succeeded", { evidence: evidence() })).code).toBe("INVALID_INPUT");
+    expect(errorOf(() => finish(store, "succeeded", { evidence: evidence() })).code).toBe(
+      "INVALID_INPUT",
+    );
     expect(snapshot(store)).toBe(before);
   });
 
@@ -161,9 +266,23 @@ describe("finishExecution", () => {
     const store = ready();
     begin(store);
     finish(store, "succeeded");
-    expect(errorOf(() => finish(store, "failed", { expectedActionVersion: 99 })).code).toBe("ACTION_STATE_CONFLICT");
+    expect(errorOf(() => finish(store, "failed", { expectedActionVersion: 99 })).code).toBe(
+      "ACTION_STATE_CONFLICT",
+    );
     expect(store.actions.require(SEND_ID).status).toBe("succeeded");
-    expect(errorOf(() => store.finishExecution({ idempotencyKey: "ghost", outcome: "succeeded", expectedActionVersion: 1, at: LATER, correlationId: "c", reason: "r", providerReference: null })).code).toBe("INVALID_INPUT");
+    expect(
+      errorOf(() =>
+        store.finishExecution({
+          idempotencyKey: "ghost",
+          outcome: "succeeded",
+          expectedActionVersion: 1,
+          at: LATER,
+          correlationId: "c",
+          reason: "r",
+          providerReference: null,
+        }),
+      ).code,
+    ).toBe("INVALID_INPUT");
   });
 
   it("keeps an unknown outcome unknown until it is reconciled, then records the real result", () => {
@@ -171,13 +290,28 @@ describe("finishExecution", () => {
     begin(store);
     finish(store, "outcomeUnknown", { providerReference: null, reason: "providerTimeout" });
     expect(store.actions.require(SEND_ID).status).toBe("outcomeUnknown");
-    expect(store.executions.require(KEY)).toMatchObject({ status: "outcomeUnknown", providerReference: null });
+    expect(store.executions.require(KEY)).toMatchObject({
+      status: "outcomeUnknown",
+      providerReference: null,
+    });
     expect(errorOf(() => finish(store, "outcomeUnknown")).code).toBe("ACTION_STATE_CONFLICT");
     expect(store.actions.require(SEND_ID).status).toBe("outcomeUnknown");
-    finish(store, "succeeded", { providerReference: "sim_ref_found", reason: "reconciled", evidence: evidence() });
+    finish(store, "succeeded", {
+      providerReference: "sim_ref_found",
+      reason: "reconciled",
+      evidence: evidence(),
+    });
     expect(store.actions.require(SEND_ID).status).toBe("succeeded");
-    expect(store.executions.require(KEY)).toMatchObject({ status: "succeeded", providerReference: "sim_ref_found" });
-    expect(store.actions.getTransitions(SEND_ID).map((h) => h.toStatus).slice(-3)).toEqual(["running", "outcomeUnknown", "succeeded"]);
+    expect(store.executions.require(KEY)).toMatchObject({
+      status: "succeeded",
+      providerReference: "sim_ref_found",
+    });
+    expect(
+      store.actions
+        .getTransitions(SEND_ID)
+        .map((h) => h.toStatus)
+        .slice(-3),
+    ).toEqual(["running", "outcomeUnknown", "succeeded"]);
   });
 
   it("can resolve an unknown outcome to a definite failure", () => {
@@ -194,7 +328,8 @@ describe("finishExecution", () => {
     finish(store, "succeeded");
     const decision = gateFor(store);
     expect(decision.allowed).toBe(false);
-    if (!decision.allowed) expect(decision.violations.map((v) => v.code)).toContain("ACTION_ALREADY_FINISHED");
+    if (!decision.allowed)
+      expect(decision.violations.map((v) => v.code)).toContain("ACTION_ALREADY_FINISHED");
   });
 });
 
@@ -203,12 +338,20 @@ describe("the full path: gate, begin, adapter, finish", () => {
     const store = ready();
     const calls: string[] = [];
     const outcome = await runIfAllowed(gateFor(store), async (grant) => {
-      store.beginExecution({ grant, expectedActionVersion: store.actions.require(SEND_ID).version, at: LATER, correlationId: "corr_exec" });
+      store.beginExecution({
+        grant,
+        expectedActionVersion: store.actions.require(SEND_ID).version,
+        at: LATER,
+        correlationId: "corr_exec",
+      });
       calls.push("adapter");
       return finish(store, "succeeded", { evidence: evidence() });
     });
     expect(outcome.executed).toBe(true);
-    const second = await runIfAllowed(gateFor(store), async () => { calls.push("adapter again"); return null; });
+    const second = await runIfAllowed(gateFor(store), async () => {
+      calls.push("adapter again");
+      return null;
+    });
     expect(second.executed).toBe(false);
     expect(calls).toEqual(["adapter"]);
     expect(store.actions.require(SEND_ID).status).toBe("succeeded");
@@ -228,14 +371,28 @@ describe("concurrent executions from separate connections", () => {
       const versionA = first.actions.require(SEND_ID).version;
       const versionB = second.actions.require(SEND_ID).version;
 
-      first.beginExecution({ grant: grantA, expectedActionVersion: versionA, at: LATER, correlationId: "corr_a" });
-      const loser = errorOf(() => second.beginExecution({ grant: grantB, expectedActionVersion: versionB, at: LATER, correlationId: "corr_b" }));
+      first.beginExecution({
+        grant: grantA,
+        expectedActionVersion: versionA,
+        at: LATER,
+        correlationId: "corr_a",
+      });
+      const loser = errorOf(() =>
+        second.beginExecution({
+          grant: grantB,
+          expectedActionVersion: versionB,
+          at: LATER,
+          correlationId: "corr_b",
+        }),
+      );
       expect(loser.code).toBe("IDEMPOTENCY_CONFLICT");
       expect(first.executions.listByAction(SEND_ID)).toHaveLength(1);
       expect(first.executions.require(KEY).correlationId).toBe("corr_a");
       expect(first.approvals.listConsumedIds().size).toBe(1);
       expect(second.actions.require(SEND_ID).status).toBe("running");
-      expect(first.actions.getTransitions(SEND_ID).filter((h) => h.toStatus === "running")).toHaveLength(1);
+      expect(
+        first.actions.getTransitions(SEND_ID).filter((h) => h.toStatus === "running"),
+      ).toHaveLength(1);
       first.close();
       second.close();
     });
@@ -248,8 +405,24 @@ describe("concurrent executions from separate connections", () => {
       const writerB = openStore(temp.file("lost.db"));
       const seenByA = writerA.actions.require(SEND_ID);
       const seenByB = writerB.actions.require(SEND_ID);
-      writerA.actions.apply({ actionId: SEND_ID, expectedVersion: seenByA.version, toStatus: "ready", at: LATER, correlationId: "a", reason: "A wins" });
-      const lost = errorOf(() => writerB.actions.apply({ actionId: SEND_ID, expectedVersion: seenByB.version, toStatus: "cancelled", at: LATER, correlationId: "b", reason: "B is stale" }));
+      writerA.actions.apply({
+        actionId: SEND_ID,
+        expectedVersion: seenByA.version,
+        toStatus: "ready",
+        at: LATER,
+        correlationId: "a",
+        reason: "A wins",
+      });
+      const lost = errorOf(() =>
+        writerB.actions.apply({
+          actionId: SEND_ID,
+          expectedVersion: seenByB.version,
+          toStatus: "cancelled",
+          at: LATER,
+          correlationId: "b",
+          reason: "B is stale",
+        }),
+      );
       expect(lost.code).toBe("ACTION_STATE_CONFLICT");
       expect(lost.metadata).toMatchObject({ expectedVersion: 1, actualVersion: 2 });
       expect(writerA.actions.require(SEND_ID).status).toBe("ready");
@@ -267,7 +440,9 @@ describe("concurrent executions from separate connections", () => {
       const base = first.plans.getCurrent(PLAN_ID_FOR_RACE);
       if (base === null) throw new Error("plan missing");
       first.plans.insertVersion({ ...base, planVersion: 2, parentPlanVersion: 1 });
-      const loser = errorOf(() => second.plans.insertVersion({ ...base, planVersion: 2, parentPlanVersion: 1 }));
+      const loser = errorOf(() =>
+        second.plans.insertVersion({ ...base, planVersion: 2, parentPlanVersion: 1 }),
+      );
       expect(loser.code).toBe("ACTION_STATE_CONFLICT");
       expect(second.plans.listVersions(PLAN_ID_FOR_RACE).map((p) => p.planVersion)).toEqual([1, 2]);
       first.close();

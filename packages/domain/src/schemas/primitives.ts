@@ -45,17 +45,8 @@ export function parseIsoTimestamp(value: string): number | null {
     return null;
   }
 
-  const localMillis = Date.UTC(
-    year,
-    month - 1,
-    day,
-    hour,
-    minute,
-    second,
-    millisecond,
-  );
-  const offsetMillis =
-    offsetSign * (offsetHours * 60 + offsetMinutes) * 60_000;
+  const localMillis = Date.UTC(year, month - 1, day, hour, minute, second, millisecond);
+  const offsetMillis = offsetSign * (offsetHours * 60 + offsetMinutes) * 60_000;
   return localMillis - offsetMillis;
 }
 
@@ -92,10 +83,7 @@ export const lowerCamelNameSchema = z
   .string()
   .min(1)
   .max(64)
-  .regex(
-    LOWER_CAMEL_PATTERN,
-    taggedMessage("INVALID_FORMAT", "Must be lowerCamelCase."),
-  );
+  .regex(LOWER_CAMEL_PATTERN, taggedMessage("INVALID_FORMAT", "Must be lowerCamelCase."));
 
 /** Lowercase hex SHA-256 digest. */
 export const sha256HexSchema = z
@@ -108,10 +96,7 @@ export const sha256HexSchema = z
 /** Stable machine code such as `DEADLINE_EXCEEDED`. */
 export const stableCodeSchema = z
   .string()
-  .regex(
-    STABLE_CODE_PATTERN,
-    taggedMessage("INVALID_FORMAT", "Must be an UPPER_SNAKE_CASE code."),
-  );
+  .regex(STABLE_CODE_PATTERN, taggedMessage("INVALID_FORMAT", "Must be an UPPER_SNAKE_CASE code."));
 
 /** Non-blank bounded text. */
 export function boundedTextSchema(maxLength: number) {
@@ -151,9 +136,7 @@ export function uniqueIdListSchema(maxItems: number) {
     .max(maxItems)
     .superRefine((ids, ctx) => {
       for (const index of findDuplicateIndexes(ids)) {
-        addTaggedIssue(ctx, "DUPLICATE_ID", "Identifier is listed twice.", [
-          index,
-        ]);
+        addTaggedIssue(ctx, "DUPLICATE_ID", "Identifier is listed twice.", [index]);
       }
     });
 }
@@ -174,9 +157,7 @@ export function checkTimestampOrder(
   const earlierMillis = parseIsoTimestamp(earlier);
   const laterMillis = parseIsoTimestamp(later);
   if (earlierMillis === null || laterMillis === null) return;
-  const isOrdered = strict
-    ? laterMillis > earlierMillis
-    : laterMillis >= earlierMillis;
+  const isOrdered = strict ? laterMillis > earlierMillis : laterMillis >= earlierMillis;
   if (!isOrdered) addTaggedIssue(ctx, "INVALID_ORDER", text, path);
 }
 

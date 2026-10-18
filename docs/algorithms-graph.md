@@ -84,10 +84,10 @@ covers the property, keeps the dependency set unchanged, and is reproducible.
 
 ## Suggested lines for `docs/implementation-status.md`
 
-| Requirement                                         | Status       | Evidence                                   |
-| --------------------------------------------------- | ------------ | ------------------------------------------ |
-| Algorithm B: graph validation and Kahn topological order | `tested` | `pnpm test:unit` (graph tests)             |
-| Graph errors mapped to typed domain errors          | `tested`     | `pnpm test:unit`                           |
-| Algorithm C: scheduler                              | `notStarted` | Prompt 4                                   |
+| Requirement                                              | Status       | Evidence                       |
+| -------------------------------------------------------- | ------------ | ------------------------------ |
+| Algorithm B: graph validation and Kahn topological order | `tested`     | `pnpm test:unit` (graph tests) |
+| Graph errors mapped to typed domain errors               | `tested`     | `pnpm test:unit`               |
+| Algorithm C: scheduler                                   | `notStarted` | Prompt 4                       |
 
 Mark `tested` only after `pnpm test:unit` passes in the real repository.

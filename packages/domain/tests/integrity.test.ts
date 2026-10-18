@@ -48,9 +48,7 @@ describe("checkReferentialIntegrity", () => {
   });
 
   it("reports unresolved action dependencies", () => {
-    const issues = summarize(
-      checkReferentialIntegrity({ actions: [sendAction] }),
-    );
+    const issues = summarize(checkReferentialIntegrity({ actions: [sendAction] }));
     expect(issues).toEqual(["actions[0].dependencyActionIds[0]:UNRESOLVED_REFERENCE"]);
   });
 
@@ -79,9 +77,7 @@ describe("checkReferentialIntegrity", () => {
   it("does not check references into collections that were not provided", () => {
     const issues = checkReferentialIntegrity({ commitments: [commitment] });
     expect(issues).toEqual([]);
-    expect(
-      checkReferentialIntegrity({ actions: [finalizeAction] }),
-    ).toEqual([]);
+    expect(checkReferentialIntegrity({ actions: [finalizeAction] })).toEqual([]);
   });
 
   it("treats a provided but empty collection as having no records", () => {

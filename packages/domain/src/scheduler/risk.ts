@@ -28,11 +28,7 @@ export interface RiskAssessment {
 }
 
 export function isValidRiskThreshold(minutes: number): boolean {
-  return (
-    Number.isInteger(minutes) &&
-    minutes >= 0 &&
-    minutes <= MAX_RISK_THRESHOLD_MINUTES
-  );
+  return Number.isInteger(minutes) && minutes >= 0 && minutes <= MAX_RISK_THRESHOLD_MINUTES;
 }
 
 /**

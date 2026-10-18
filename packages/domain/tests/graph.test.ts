@@ -10,11 +10,7 @@ import {
   graphFailureToDomainError,
   type GraphNode,
 } from "../src/graph/commitment-graph.js";
-import {
-  validAction,
-  validCommitment,
-  validFinalizeAction,
-} from "./helpers/fixtures.js";
+import { validAction, validCommitment, validFinalizeAction } from "./helpers/fixtures.js";
 
 function node(id: string, ...dependsOn: string[]): GraphNode {
   return { id, dependsOn };
@@ -75,8 +71,20 @@ describe("buildCommitmentGraph: valid graphs", () => {
     const expected = orderOf(nodes);
     const permutations: GraphNode[][] = [
       [...nodes].reverse(),
-      [nodes[2] as GraphNode, nodes[4] as GraphNode, nodes[0] as GraphNode, nodes[3] as GraphNode, nodes[1] as GraphNode],
-      [nodes[4] as GraphNode, nodes[3] as GraphNode, nodes[2] as GraphNode, nodes[1] as GraphNode, nodes[0] as GraphNode],
+      [
+        nodes[2] as GraphNode,
+        nodes[4] as GraphNode,
+        nodes[0] as GraphNode,
+        nodes[3] as GraphNode,
+        nodes[1] as GraphNode,
+      ],
+      [
+        nodes[4] as GraphNode,
+        nodes[3] as GraphNode,
+        nodes[2] as GraphNode,
+        nodes[1] as GraphNode,
+        nodes[0] as GraphNode,
+      ],
     ];
     for (const permutation of permutations) {
       expect(orderOf(permutation)).toEqual(expected);
@@ -90,7 +98,11 @@ describe("buildCommitmentGraph: valid graphs", () => {
 
   it("compares IDs by code unit, not by locale", () => {
     expect(orderOf([node("b"), node("B"), node("a"), node("_x"), node("1")])).toEqual([
-      "1", "B", "_x", "a", "b",
+      "1",
+      "B",
+      "_x",
+      "a",
+      "b",
     ]);
   });
 
@@ -104,7 +116,12 @@ describe("buildCommitmentGraph: valid graphs", () => {
   });
 
   it("exposes sorted direct dependencies and dependents", () => {
-    const result = buildCommitmentGraph([node("d", "c", "b"), node("b", "a"), node("c", "a"), node("a")]);
+    const result = buildCommitmentGraph([
+      node("d", "c", "b"),
+      node("b", "a"),
+      node("c", "a"),
+      node("a"),
+    ]);
     if (!result.ok) throw new Error("expected success");
     expect(result.graph.dependenciesOf.get("d")).toEqual(["b", "c"]);
     expect(result.graph.dependentsOf.get("a")).toEqual(["b", "c"]);
@@ -115,7 +132,10 @@ describe("buildCommitmentGraph: valid graphs", () => {
   it("handles a very long chain without recursion limits", () => {
     const size = 20_000;
     const nodes = Array.from({ length: size }, (_, index) =>
-      node(`n${String(index).padStart(6, "0")}`, ...(index === 0 ? [] : [`n${String(index - 1).padStart(6, "0")}`])),
+      node(
+        `n${String(index).padStart(6, "0")}`,
+        ...(index === 0 ? [] : [`n${String(index - 1).padStart(6, "0")}`]),
+      ),
     );
     const order = orderOf(nodes.reverse());
     expect(order).toHaveLength(size);
@@ -149,7 +169,13 @@ describe("buildCommitmentGraph: structural errors", () => {
   });
 
   it("reports all structural issues together in a stable order", () => {
-    const nodes = [node("z", "ghost"), node("b", "b"), node("a"), node("a"), node("m", "nope", "ghost")];
+    const nodes = [
+      node("z", "ghost"),
+      node("b", "b"),
+      node("a"),
+      node("a"),
+      node("m", "nope", "ghost"),
+    ];
     expect(codes(nodes)).toEqual([
       "DUPLICATE_NODE_ID:a",
       "MISSING_DEPENDENCY:m",
@@ -238,11 +264,15 @@ describe("typed errors", () => {
   });
 
   it("maps a self-loop to GRAPH_CYCLE_DETECTED", () => {
-    expect(graphFailureToDomainError(failureOf([node("a", "a")])).code).toBe("GRAPH_CYCLE_DETECTED");
+    expect(graphFailureToDomainError(failureOf([node("a", "a")])).code).toBe(
+      "GRAPH_CYCLE_DETECTED",
+    );
   });
 
   it("maps a missing dependency to DEPENDENCY_NOT_FOUND", () => {
-    expect(graphFailureToDomainError(failureOf([node("a", "ghost")])).code).toBe("DEPENDENCY_NOT_FOUND");
+    expect(graphFailureToDomainError(failureOf([node("a", "ghost")])).code).toBe(
+      "DEPENDENCY_NOT_FOUND",
+    );
   });
 
   it("maps a duplicate ID to INVALID_INPUT", () => {
@@ -263,7 +293,10 @@ describe("typed errors", () => {
 
 describe("adapters for schema-validated records", () => {
   it("builds nodes from actions and orders them", () => {
-    const actions = [plannedActionSchema.parse(validAction()), plannedActionSchema.parse(validFinalizeAction())];
+    const actions = [
+      plannedActionSchema.parse(validAction()),
+      plannedActionSchema.parse(validFinalizeAction()),
+    ];
     const nodes = actionsToGraphNodes(actions);
     expect(nodes).toEqual([
       { id: "action_send_report", dependsOn: ["action_finalize_report"] },

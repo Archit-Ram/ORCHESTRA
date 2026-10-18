@@ -1,11 +1,6 @@
 import { z } from "zod";
 import { EVIDENCE_RESULTS, EVIDENCE_TYPES, SUBJECT_TYPES } from "./enums.js";
-import {
-  boundedTextSchema,
-  idSchema,
-  isoTimestampSchema,
-  sha256HexSchema,
-} from "./primitives.js";
+import { boundedTextSchema, idSchema, isoTimestampSchema, sha256HexSchema } from "./primitives.js";
 import { addTaggedIssue } from "./validation.js";
 
 /**
@@ -29,12 +24,9 @@ export const evidenceRecordSchema = z
   .strict()
   .superRefine((evidence, ctx) => {
     if (evidence.evidenceType === "userApproval" && evidence.subjectType !== "action") {
-      addTaggedIssue(
-        ctx,
-        "INCONSISTENT_STATE",
-        "User approval evidence must be about an action.",
-        ["subjectType"],
-      );
+      addTaggedIssue(ctx, "INCONSISTENT_STATE", "User approval evidence must be about an action.", [
+        "subjectType",
+      ]);
     }
   });
 

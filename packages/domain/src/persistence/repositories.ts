@@ -99,7 +99,12 @@ export interface ApprovalRepository {
    * Marks an approval as spent by one execution. Only an approving decision for
    * the same action can be consumed, and only once; a second attempt is a replay.
    */
-  consume(input: { approvalId: string; actionId: string; idempotencyKey: string; at: string }): void;
+  consume(input: {
+    approvalId: string;
+    actionId: string;
+    idempotencyKey: string;
+    at: string;
+  }): void;
   /** IDs of approvals already spent, optionally limited to one action. */
   listConsumedIds(actionId?: string): Set<string>;
 }

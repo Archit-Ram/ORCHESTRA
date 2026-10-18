@@ -6,7 +6,10 @@ import type { PlannedAction } from "../../src/schemas/action.js";
 import { approvalRecordSchema, type ApprovalRecord } from "../../src/schemas/approval.js";
 import { invariantSchema, type Invariant } from "../../src/schemas/invariant.js";
 import type { ExecutionPlan } from "../../src/schemas/plan.js";
-import { FINISHED_ACTION_STATUSES, type VerificationContext } from "../../src/verifier/plan-verifier.js";
+import {
+  FINISHED_ACTION_STATUSES,
+  type VerificationContext,
+} from "../../src/verifier/plan-verifier.js";
 import { validAction, validFinalizeAction, validInvariant, validPlan } from "./fixtures.js";
 
 export const NOW = "2026-10-23T09:00:00.000Z";
@@ -19,10 +22,42 @@ export const EMAIL_INPUT_SCHEMA = z
 
 export function makeTools(): ToolCatalog {
   return createToolCatalog([
-    { toolName: "sendEmail", environment: "simulator", category: "externalCommunication", riskClass: "high", isReversible: false, requiredScopes: ["email:send"], inputSchema: EMAIL_INPUT_SCHEMA },
-    { toolName: "prepareDocument", environment: "simulator", category: "write", riskClass: "low", isReversible: true, requiredScopes: ["docs:write"], inputSchema: z.object({ documentId: z.string().min(1) }).strict() },
-    { toolName: "readCalendar", environment: "simulator", category: "read", riskClass: "low", isReversible: true, requiredScopes: ["calendar:read"], inputSchema: z.object({ calendarId: z.string().min(1) }).strict() },
-    { toolName: "liveSendEmail", environment: "live", category: "externalCommunication", riskClass: "high", isReversible: false, requiredScopes: ["email:send"], inputSchema: EMAIL_INPUT_SCHEMA },
+    {
+      toolName: "sendEmail",
+      environment: "simulator",
+      category: "externalCommunication",
+      riskClass: "high",
+      isReversible: false,
+      requiredScopes: ["email:send"],
+      inputSchema: EMAIL_INPUT_SCHEMA,
+    },
+    {
+      toolName: "prepareDocument",
+      environment: "simulator",
+      category: "write",
+      riskClass: "low",
+      isReversible: true,
+      requiredScopes: ["docs:write"],
+      inputSchema: z.object({ documentId: z.string().min(1) }).strict(),
+    },
+    {
+      toolName: "readCalendar",
+      environment: "simulator",
+      category: "read",
+      riskClass: "low",
+      isReversible: true,
+      requiredScopes: ["calendar:read"],
+      inputSchema: z.object({ calendarId: z.string().min(1) }).strict(),
+    },
+    {
+      toolName: "liveSendEmail",
+      environment: "live",
+      category: "externalCommunication",
+      riskClass: "high",
+      isReversible: false,
+      requiredScopes: ["email:send"],
+      inputSchema: EMAIL_INPUT_SCHEMA,
+    },
   ]);
 }
 
@@ -30,16 +65,48 @@ export function invariant(overrides: Record<string, unknown>): Invariant {
   return invariantSchema.parse({ ...validInvariant(), ...overrides });
 }
 
-export const MEETING_WINDOW = { startAt: "2026-10-23T15:00:00.000Z", endAt: "2026-10-23T16:00:00.000Z", prohibitedToolNames: ["sendEmail"] };
+export const MEETING_WINDOW = {
+  startAt: "2026-10-23T15:00:00.000Z",
+  endAt: "2026-10-23T16:00:00.000Z",
+  prohibitedToolNames: ["sendEmail"],
+};
 
 export function defaultInvariants(): Invariant[] {
   return [
-    invariant({ invariantId: "invariant_approval", ruleType: "approvalRequired", parameters: { actionId: SEND_ID } }),
-    invariant({ invariantId: "invariant_meeting", ruleType: "protectedTimeWindow", parameters: MEETING_WINDOW }),
-    invariant({ invariantId: "invariant_recipient", ruleType: "recipientAllowList", parameters: { toolName: "sendEmail", allowedRecipients: ["Rahul@Example.com"] } }),
-    invariant({ invariantId: "invariant_order", ruleType: "dependencySatisfied", parameters: { actionId: SEND_ID, requiredActionIds: [FINALIZE_ID] } }),
-    invariant({ invariantId: "invariant_nodup", ruleType: "noDuplicateSideEffect", parameters: { toolName: "sendEmail" } }),
-    invariant({ invariantId: "invariant_deadline", ruleType: "deadline", parameters: { subjectType: "commitment", subjectId: "commitment_report_delivery", deadlineAt: "2026-10-23T17:00:00.000Z" } }),
+    invariant({
+      invariantId: "invariant_approval",
+      ruleType: "approvalRequired",
+      parameters: { actionId: SEND_ID },
+    }),
+    invariant({
+      invariantId: "invariant_meeting",
+      ruleType: "protectedTimeWindow",
+      parameters: MEETING_WINDOW,
+    }),
+    invariant({
+      invariantId: "invariant_recipient",
+      ruleType: "recipientAllowList",
+      parameters: { toolName: "sendEmail", allowedRecipients: ["Rahul@Example.com"] },
+    }),
+    invariant({
+      invariantId: "invariant_order",
+      ruleType: "dependencySatisfied",
+      parameters: { actionId: SEND_ID, requiredActionIds: [FINALIZE_ID] },
+    }),
+    invariant({
+      invariantId: "invariant_nodup",
+      ruleType: "noDuplicateSideEffect",
+      parameters: { toolName: "sendEmail" },
+    }),
+    invariant({
+      invariantId: "invariant_deadline",
+      ruleType: "deadline",
+      parameters: {
+        subjectType: "commitment",
+        subjectId: "commitment_report_delivery",
+        deadlineAt: "2026-10-23T17:00:00.000Z",
+      },
+    }),
   ];
 }
 
@@ -47,13 +114,18 @@ export function makeAction(base: unknown, overrides: Record<string, unknown> = {
   return { ...(base as object), ...overrides } as PlannedAction;
 }
 
-export function makePlan(actions: PlannedAction[], overrides: Record<string, unknown> = {}): ExecutionPlan {
+export function makePlan(
+  actions: PlannedAction[],
+  overrides: Record<string, unknown> = {},
+): ExecutionPlan {
   return { ...validPlan(), actions, ...overrides } as unknown as ExecutionPlan;
 }
 
 /** Schedules the plan's unfinished actions with the real scheduler. */
 export function scheduleFor(plan: ExecutionPlan, planningStartAt: string = NOW): Schedule {
-  const unfinished = plan.actions.filter((action) => !FINISHED_ACTION_STATUSES.includes(action.status));
+  const unfinished = plan.actions.filter(
+    (action) => !FINISHED_ACTION_STATUSES.includes(action.status),
+  );
   const ids = new Set(unfinished.map((action) => action.actionId));
   const result = generateSchedule({
     planningStartAt,
@@ -71,11 +143,21 @@ export function scheduleFor(plan: ExecutionPlan, planningStartAt: string = NOW):
   return result.schedule;
 }
 
-export function approvalFor(action: PlannedAction, overrides: Record<string, unknown> = {}): ApprovalRecord {
+export function approvalFor(
+  action: PlannedAction,
+  overrides: Record<string, unknown> = {},
+): ApprovalRecord {
   return approvalRecordSchema.parse({
-    approvalId: "approval_0001", actionId: action.actionId, planId: "plan_report_delivery", planVersion: 1,
-    payloadHash: computeActionPayloadHash(action), approverId: "user_0001", decision: "approved",
-    decidedAt: "2026-10-23T08:30:00.000Z", expiresAt: "2026-10-23T18:00:00.000Z", ...overrides,
+    approvalId: "approval_0001",
+    actionId: action.actionId,
+    planId: "plan_report_delivery",
+    planVersion: 1,
+    payloadHash: computeActionPayloadHash(action),
+    approverId: "user_0001",
+    decision: "approved",
+    decidedAt: "2026-10-23T08:30:00.000Z",
+    expiresAt: "2026-10-23T18:00:00.000Z",
+    ...overrides,
   });
 }
 
@@ -89,17 +171,30 @@ export interface ScenarioOverrides {
   skipSchedule?: boolean;
 }
 
-function assemble(base: { finalize: Record<string, unknown>; send: Record<string, unknown> }, withApproval: boolean, overrides: ScenarioOverrides): VerificationContext & { send: PlannedAction; finalize: PlannedAction } {
+function assemble(
+  base: { finalize: Record<string, unknown>; send: Record<string, unknown> },
+  withApproval: boolean,
+  overrides: ScenarioOverrides,
+): VerificationContext & { send: PlannedAction; finalize: PlannedAction } {
   const finalize = makeAction(validFinalizeAction(), { ...base.finalize, ...overrides.finalize });
   const send = makeAction(validAction(), { ...base.send, ...overrides.send });
   const plan = makePlan([finalize, send, ...(overrides.extraActions ?? [])], overrides.plan);
   const schedule = overrides.skipSchedule === true ? null : scheduleFor(plan);
   const context: VerificationContext = {
-    now: NOW, plan, currentPlanVersion: plan.planVersion, invariants: defaultInvariants(), tools: makeTools(),
-    principal: { userId: "user_0001", scopes: ["email:send", "docs:write", "calendar:read"] }, environment: "simulator",
+    now: NOW,
+    plan,
+    currentPlanVersion: plan.planVersion,
+    invariants: defaultInvariants(),
+    tools: makeTools(),
+    principal: { userId: "user_0001", scopes: ["email:send", "docs:write", "calendar:read"] },
+    environment: "simulator",
     // The approval always covers the ORIGINAL action, so overriding the payload simulates tampering.
-    schedule, approvals: withApproval ? [approvalFor(makeAction(validAction(), base.send))] : [], authorizedApproverIds: new Set(["user_0001"]),
-    consumedApprovalIds: new Set(), satisfiedPreconditionIds: new Set(), recordedIdempotencyKeys: new Map(),
+    schedule,
+    approvals: withApproval ? [approvalFor(makeAction(validAction(), base.send))] : [],
+    authorizedApproverIds: new Set(["user_0001"]),
+    consumedApprovalIds: new Set(),
+    satisfiedPreconditionIds: new Set(),
+    recordedIdempotencyKeys: new Map(),
     ...overrides.context,
   };
   return { ...context, send, finalize };
@@ -112,9 +207,15 @@ export function planningContext(overrides: ScenarioOverrides = {}) {
 
 /** A plan about to send: the report is finalized, the send action is ready and approved. */
 export function executionContext(overrides: ScenarioOverrides = {}) {
-  return assemble({ finalize: { status: "succeeded" }, send: { status: "ready" } }, true, overrides);
+  return assemble(
+    { finalize: { status: "succeeded" }, send: { status: "ready" } },
+    true,
+    overrides,
+  );
 }
 
-export function describeViolations(violations: ReadonlyArray<{ severity: string; code: string; actionId: string | null }>): string[] {
+export function describeViolations(
+  violations: ReadonlyArray<{ severity: string; code: string; actionId: string | null }>,
+): string[] {
   return violations.map((v) => `${v.severity}:${v.code}:${v.actionId ?? "-"}`);
 }

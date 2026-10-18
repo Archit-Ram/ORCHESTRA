@@ -10,18 +10,32 @@ export class SqliteEvidenceRepository implements EvidenceRepository {
   append(record: EvidenceRecord): void {
     const valid = parseOrThrow(evidenceRecordSchema, record, "persistence.evidence.append");
     this.database
-      .prepare("INSERT INTO evidence (evidence_id, subject_type, subject_id, correlation_id, observed_at, result, body) VALUES (?, ?, ?, ?, ?, ?, ?)")
-      .run(valid.evidenceId, valid.subjectType, valid.subjectId, valid.correlationId, valid.observedAt, valid.result, JSON.stringify(valid));
+      .prepare(
+        "INSERT INTO evidence (evidence_id, subject_type, subject_id, correlation_id, observed_at, result, body) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      )
+      .run(
+        valid.evidenceId,
+        valid.subjectType,
+        valid.subjectId,
+        valid.correlationId,
+        valid.observedAt,
+        valid.result,
+        JSON.stringify(valid),
+      );
   }
 
   get(evidenceId: string): EvidenceRecord | null {
-    const row = this.database.prepare("SELECT * FROM evidence WHERE evidence_id = ?").get(evidenceId);
+    const row = this.database
+      .prepare("SELECT * FROM evidence WHERE evidence_id = ?")
+      .get(evidenceId);
     return row === undefined ? null : this.hydrate(row);
   }
 
   listForSubject(subjectType: "commitment" | "action", subjectId: string): EvidenceRecord[] {
     return this.database
-      .prepare("SELECT * FROM evidence WHERE subject_type = ? AND subject_id = ? ORDER BY observed_at, evidence_id")
+      .prepare(
+        "SELECT * FROM evidence WHERE subject_type = ? AND subject_id = ? ORDER BY observed_at, evidence_id",
+      )
       .all(subjectType, subjectId)
       .map((row) => this.hydrate(row));
   }

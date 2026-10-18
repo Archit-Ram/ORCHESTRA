@@ -16,7 +16,11 @@ import {
 describe("evidenceRecordSchema", () => {
   it("accepts valid evidence, including null reference and hash", () => {
     expectAccepted(evidenceRecordSchema, validEvidence());
-    expectAccepted(evidenceRecordSchema, { ...validEvidence(), providerReference: null, contentHash: null });
+    expectAccepted(evidenceRecordSchema, {
+      ...validEvidence(),
+      providerReference: null,
+      contentHash: null,
+    });
   });
 
   it("rejects missing fields and extra fields", () => {
@@ -25,22 +29,56 @@ describe("evidenceRecordSchema", () => {
       delete input[field];
       expectRejected(evidenceRecordSchema, input, field, "REQUIRED_FIELD_MISSING");
     }
-    expectRejected(evidenceRecordSchema, { ...validEvidence(), emailBody: "full text" }, "$", "UNRECOGNIZED_FIELD");
+    expectRejected(
+      evidenceRecordSchema,
+      { ...validEvidence(), emailBody: "full text" },
+      "$",
+      "UNRECOGNIZED_FIELD",
+    );
   });
 
   it("rejects invalid enums, hashes and timestamps", () => {
-    expectRejected(evidenceRecordSchema, { ...validEvidence(), result: "probablySuccess" }, "result", "INVALID_ENUM_VALUE");
-    expectRejected(evidenceRecordSchema, { ...validEvidence(), evidenceType: "modelOpinion" }, "evidenceType", "INVALID_ENUM_VALUE");
-    expectRejected(evidenceRecordSchema, { ...validEvidence(), contentHash: "abc" }, "contentHash", "INVALID_FORMAT");
-    expectRejected(evidenceRecordSchema, { ...validEvidence(), observedAt: "yesterday" }, "observedAt", "INVALID_TIMESTAMP");
+    expectRejected(
+      evidenceRecordSchema,
+      { ...validEvidence(), result: "probablySuccess" },
+      "result",
+      "INVALID_ENUM_VALUE",
+    );
+    expectRejected(
+      evidenceRecordSchema,
+      { ...validEvidence(), evidenceType: "modelOpinion" },
+      "evidenceType",
+      "INVALID_ENUM_VALUE",
+    );
+    expectRejected(
+      evidenceRecordSchema,
+      { ...validEvidence(), contentHash: "abc" },
+      "contentHash",
+      "INVALID_FORMAT",
+    );
+    expectRejected(
+      evidenceRecordSchema,
+      { ...validEvidence(), observedAt: "yesterday" },
+      "observedAt",
+      "INVALID_TIMESTAMP",
+    );
   });
 
   it("rejects an oversized summary", () => {
-    expectRejected(evidenceRecordSchema, { ...validEvidence(), summary: "s".repeat(501) }, "summary", "OUT_OF_RANGE");
+    expectRejected(
+      evidenceRecordSchema,
+      { ...validEvidence(), summary: "s".repeat(501) },
+      "summary",
+      "OUT_OF_RANGE",
+    );
   });
 
   it("requires approval evidence to concern an action", () => {
-    expectAccepted(evidenceRecordSchema, { ...validEvidence(), evidenceType: "userApproval", subjectType: "action" });
+    expectAccepted(evidenceRecordSchema, {
+      ...validEvidence(),
+      evidenceType: "userApproval",
+      subjectType: "action",
+    });
     expectRejected(
       evidenceRecordSchema,
       { ...validEvidence(), evidenceType: "userApproval", subjectType: "commitment" },
@@ -65,29 +103,84 @@ describe("approvalRecordSchema", () => {
   });
 
   it("rejects malformed payload hashes", () => {
-    expectRejected(approvalRecordSchema, { ...validApproval(), payloadHash: "not-a-hash" }, "payloadHash", "INVALID_FORMAT");
-    expectRejected(approvalRecordSchema, { ...validApproval(), payloadHash: SHA256_A.toUpperCase() }, "payloadHash", "INVALID_FORMAT");
-    expectRejected(approvalRecordSchema, { ...validApproval(), payloadHash: `${SHA256_A}00` }, "payloadHash", "INVALID_FORMAT");
+    expectRejected(
+      approvalRecordSchema,
+      { ...validApproval(), payloadHash: "not-a-hash" },
+      "payloadHash",
+      "INVALID_FORMAT",
+    );
+    expectRejected(
+      approvalRecordSchema,
+      { ...validApproval(), payloadHash: SHA256_A.toUpperCase() },
+      "payloadHash",
+      "INVALID_FORMAT",
+    );
+    expectRejected(
+      approvalRecordSchema,
+      { ...validApproval(), payloadHash: `${SHA256_A}00` },
+      "payloadHash",
+      "INVALID_FORMAT",
+    );
   });
 
   it("rejects an unknown decision", () => {
-    expectRejected(approvalRecordSchema, { ...validApproval(), decision: "maybe" }, "decision", "INVALID_ENUM_VALUE");
-    expectRejected(approvalRecordSchema, { ...validApproval(), decision: "pending" }, "decision", "INVALID_ENUM_VALUE");
+    expectRejected(
+      approvalRecordSchema,
+      { ...validApproval(), decision: "maybe" },
+      "decision",
+      "INVALID_ENUM_VALUE",
+    );
+    expectRejected(
+      approvalRecordSchema,
+      { ...validApproval(), decision: "pending" },
+      "decision",
+      "INVALID_ENUM_VALUE",
+    );
   });
 
   it("rejects an expiry that is not after the decision", () => {
-    expectRejected(approvalRecordSchema, { ...validApproval(), expiresAt: validApproval().decidedAt }, "expiresAt", "INVALID_ORDER");
-    expectRejected(approvalRecordSchema, { ...validApproval(), expiresAt: "2026-10-23T09:00:00.000Z" }, "expiresAt", "INVALID_ORDER");
+    expectRejected(
+      approvalRecordSchema,
+      { ...validApproval(), expiresAt: validApproval().decidedAt },
+      "expiresAt",
+      "INVALID_ORDER",
+    );
+    expectRejected(
+      approvalRecordSchema,
+      { ...validApproval(), expiresAt: "2026-10-23T09:00:00.000Z" },
+      "expiresAt",
+      "INVALID_ORDER",
+    );
   });
 
   it("rejects malformed timestamps and invalid plan versions", () => {
-    expectRejected(approvalRecordSchema, { ...validApproval(), decidedAt: "now" }, "decidedAt", "INVALID_TIMESTAMP");
-    expectRejected(approvalRecordSchema, { ...validApproval(), planVersion: 0 }, "planVersion", "OUT_OF_RANGE");
-    expectRejected(approvalRecordSchema, { ...validApproval(), planVersion: 1.5 }, "planVersion", "INVALID_TYPE");
+    expectRejected(
+      approvalRecordSchema,
+      { ...validApproval(), decidedAt: "now" },
+      "decidedAt",
+      "INVALID_TIMESTAMP",
+    );
+    expectRejected(
+      approvalRecordSchema,
+      { ...validApproval(), planVersion: 0 },
+      "planVersion",
+      "OUT_OF_RANGE",
+    );
+    expectRejected(
+      approvalRecordSchema,
+      { ...validApproval(), planVersion: 1.5 },
+      "planVersion",
+      "INVALID_TYPE",
+    );
   });
 
   it("rejects model-asserted authorization fields", () => {
-    expectRejected(approvalRecordSchema, { ...validApproval(), approvedByModel: true }, "$", "UNRECOGNIZED_FIELD");
+    expectRejected(
+      approvalRecordSchema,
+      { ...validApproval(), approvedByModel: true },
+      "$",
+      "UNRECOGNIZED_FIELD",
+    );
   });
 });
 
@@ -114,11 +207,23 @@ describe("externalEventSchema", () => {
   });
 
   it("rejects an unknown event type", () => {
-    expectRejected(externalEventSchema, { ...validEvent(), eventType: "dropDatabase" }, "eventType", "INVALID_VARIANT");
+    expectRejected(
+      externalEventSchema,
+      { ...validEvent(), eventType: "dropDatabase" },
+      "eventType",
+      "INVALID_VARIANT",
+    );
   });
 
   it("rejects missing base fields", () => {
-    for (const field of ["eventId", "source", "occurredAt", "correlationId", "environment", "payload"]) {
+    for (const field of [
+      "eventId",
+      "source",
+      "occurredAt",
+      "correlationId",
+      "environment",
+      "payload",
+    ]) {
       const input: Record<string, unknown> = { ...validEvent() };
       delete input[field];
       expectRejected(externalEventSchema, input, field, "REQUIRED_FIELD_MISSING");
@@ -126,11 +231,36 @@ describe("externalEventSchema", () => {
   });
 
   it("rejects bad environment, timestamp and payload fields", () => {
-    expectRejected(externalEventSchema, { ...validEvent(), environment: "production" }, "environment", "INVALID_ENUM_VALUE");
-    expectRejected(externalEventSchema, { ...validEvent(), occurredAt: "soon" }, "occurredAt", "INVALID_TIMESTAMP");
-    expectRejected(externalEventSchema, { ...validEvent(), payload: { actionId: "action_x", delayMinutes: 0 } }, "payload.delayMinutes", "OUT_OF_RANGE");
-    expectRejected(externalEventSchema, { ...validEvent(), payload: { actionId: "action_x", delayMinutes: -5 } }, "payload.delayMinutes", "OUT_OF_RANGE");
-    expectRejected(externalEventSchema, { ...validEvent(), payload: { actionId: "action_x", delayMinutes: 1.5 } }, "payload.delayMinutes", "INVALID_TYPE");
+    expectRejected(
+      externalEventSchema,
+      { ...validEvent(), environment: "production" },
+      "environment",
+      "INVALID_ENUM_VALUE",
+    );
+    expectRejected(
+      externalEventSchema,
+      { ...validEvent(), occurredAt: "soon" },
+      "occurredAt",
+      "INVALID_TIMESTAMP",
+    );
+    expectRejected(
+      externalEventSchema,
+      { ...validEvent(), payload: { actionId: "action_x", delayMinutes: 0 } },
+      "payload.delayMinutes",
+      "OUT_OF_RANGE",
+    );
+    expectRejected(
+      externalEventSchema,
+      { ...validEvent(), payload: { actionId: "action_x", delayMinutes: -5 } },
+      "payload.delayMinutes",
+      "OUT_OF_RANGE",
+    );
+    expectRejected(
+      externalEventSchema,
+      { ...validEvent(), payload: { actionId: "action_x", delayMinutes: 1.5 } },
+      "payload.delayMinutes",
+      "INVALID_TYPE",
+    );
   });
 
   it("rejects extra payload and top-level fields", () => {
@@ -140,7 +270,12 @@ describe("externalEventSchema", () => {
       "payload",
       "UNRECOGNIZED_FIELD",
     );
-    expectRejected(externalEventSchema, { ...validEvent(), apply: true }, "$", "UNRECOGNIZED_FIELD");
+    expectRejected(
+      externalEventSchema,
+      { ...validEvent(), apply: true },
+      "$",
+      "UNRECOGNIZED_FIELD",
+    );
   });
 
   it("rejects a protected window event that ends before it starts", () => {
@@ -185,32 +320,77 @@ describe("toolResultSchema", () => {
   });
 
   it("rejects success without data or with an error", () => {
-    expectRejected(schema, { success: true, requestId: "req_0001" }, "data", "REQUIRED_FIELD_MISSING");
-    expectRejected(schema, { success: true, requestId: "req_0001", data: { count: 1 }, error }, "error", "INCONSISTENT_STATE");
+    expectRejected(
+      schema,
+      { success: true, requestId: "req_0001" },
+      "data",
+      "REQUIRED_FIELD_MISSING",
+    );
+    expectRejected(
+      schema,
+      { success: true, requestId: "req_0001", data: { count: 1 }, error },
+      "error",
+      "INCONSISTENT_STATE",
+    );
   });
 
   it("rejects failure without an error or with data", () => {
-    expectRejected(schema, { success: false, requestId: "req_0001" }, "error", "REQUIRED_FIELD_MISSING");
-    expectRejected(schema, { success: false, requestId: "req_0001", error, data: { count: 1 } }, "data", "INCONSISTENT_STATE");
+    expectRejected(
+      schema,
+      { success: false, requestId: "req_0001" },
+      "error",
+      "REQUIRED_FIELD_MISSING",
+    );
+    expectRejected(
+      schema,
+      { success: false, requestId: "req_0001", error, data: { count: 1 } },
+      "data",
+      "INCONSISTENT_STATE",
+    );
   });
 
   it("validates data against the supplied schema", () => {
-    expectRejected(schema, { success: true, requestId: "req_0001", data: { count: "2" } }, "data.count", "INVALID_TYPE");
+    expectRejected(
+      schema,
+      { success: true, requestId: "req_0001", data: { count: "2" } },
+      "data.count",
+      "INVALID_TYPE",
+    );
   });
 
   it("rejects an unknown error code and bad warning codes", () => {
-    expectRejected(schema, { success: false, requestId: "req_0001", error: { ...error, code: "SOMETHING_ELSE" } }, "error.code", "INVALID_ENUM_VALUE");
     expectRejected(
       schema,
-      { success: true, requestId: "req_0001", data: { count: 1 }, warnings: [{ code: "lower", message: "x" }] },
+      { success: false, requestId: "req_0001", error: { ...error, code: "SOMETHING_ELSE" } },
+      "error.code",
+      "INVALID_ENUM_VALUE",
+    );
+    expectRejected(
+      schema,
+      {
+        success: true,
+        requestId: "req_0001",
+        data: { count: 1 },
+        warnings: [{ code: "lower", message: "x" }],
+      },
       "warnings[0].code",
       "INVALID_FORMAT",
     );
   });
 
   it("rejects a missing requestId and extra fields", () => {
-    expectRejected(schema, { success: true, data: { count: 1 } }, "requestId", "REQUIRED_FIELD_MISSING");
-    expectRejected(schema, { success: true, requestId: "req_0001", data: { count: 1 }, commitmentFulfilled: true }, "$", "UNRECOGNIZED_FIELD");
+    expectRejected(
+      schema,
+      { success: true, data: { count: 1 } },
+      "requestId",
+      "REQUIRED_FIELD_MISSING",
+    );
+    expectRejected(
+      schema,
+      { success: true, requestId: "req_0001", data: { count: 1 }, commitmentFulfilled: true },
+      "$",
+      "UNRECOGNIZED_FIELD",
+    );
   });
 
   it("keeps tool success distinct from commitment status", () => {

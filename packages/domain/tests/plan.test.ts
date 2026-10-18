@@ -39,20 +39,45 @@ describe("executionPlanSchema", () => {
       delete input[field];
       expectRejected(executionPlanSchema, input, field, "REQUIRED_FIELD_MISSING");
     }
-    expectRejected(executionPlanSchema, { ...validPlan(), isExecutable: true }, "$", "UNRECOGNIZED_FIELD");
+    expectRejected(
+      executionPlanSchema,
+      { ...validPlan(), isExecutable: true },
+      "$",
+      "UNRECOGNIZED_FIELD",
+    );
   });
 
   it("rejects a first version with a parent", () => {
-    expectRejected(executionPlanSchema, { ...validPlan(), parentPlanVersion: 1 }, "parentPlanVersion", "INCONSISTENT_STATE");
+    expectRejected(
+      executionPlanSchema,
+      { ...validPlan(), parentPlanVersion: 1 },
+      "parentPlanVersion",
+      "INCONSISTENT_STATE",
+    );
   });
 
   it("rejects a later version with no parent", () => {
-    expectRejected(executionPlanSchema, { ...validPlan(), planVersion: 2 }, "parentPlanVersion", "INCONSISTENT_STATE");
+    expectRejected(
+      executionPlanSchema,
+      { ...validPlan(), planVersion: 2 },
+      "parentPlanVersion",
+      "INCONSISTENT_STATE",
+    );
   });
 
   it("rejects a parent version that is not lower than the plan version", () => {
-    expectRejected(executionPlanSchema, { ...validPlan(), planVersion: 2, parentPlanVersion: 2 }, "parentPlanVersion", "INVALID_ORDER");
-    expectRejected(executionPlanSchema, { ...validPlan(), planVersion: 2, parentPlanVersion: 5 }, "parentPlanVersion", "INVALID_ORDER");
+    expectRejected(
+      executionPlanSchema,
+      { ...validPlan(), planVersion: 2, parentPlanVersion: 2 },
+      "parentPlanVersion",
+      "INVALID_ORDER",
+    );
+    expectRejected(
+      executionPlanSchema,
+      { ...validPlan(), planVersion: 2, parentPlanVersion: 5 },
+      "parentPlanVersion",
+      "INVALID_ORDER",
+    );
   });
 
   it("rejects duplicate action IDs", () => {
@@ -76,17 +101,28 @@ describe("executionPlanSchema", () => {
   it("rejects an action serving a commitment outside the plan", () => {
     expectRejected(
       executionPlanSchema,
-      { ...validPlan(), actions: [{ ...validFinalizeAction(), commitmentIds: ["commitment_other"] }] },
+      {
+        ...validPlan(),
+        actions: [{ ...validFinalizeAction(), commitmentIds: ["commitment_other"] }],
+      },
       "actions[0].commitmentIds[0]",
       "UNRESOLVED_REFERENCE",
     );
   });
 
   it("rejects an empty or duplicated commitment list", () => {
-    expectRejected(executionPlanSchema, { ...validPlan(), commitmentIds: [] }, "commitmentIds", "CONSTRAINT_VIOLATED");
     expectRejected(
       executionPlanSchema,
-      { ...validPlan(), commitmentIds: ["commitment_report_delivery", "commitment_report_delivery"] },
+      { ...validPlan(), commitmentIds: [] },
+      "commitmentIds",
+      "CONSTRAINT_VIOLATED",
+    );
+    expectRejected(
+      executionPlanSchema,
+      {
+        ...validPlan(),
+        commitmentIds: ["commitment_report_delivery", "commitment_report_delivery"],
+      },
       "commitmentIds[1]",
       "DUPLICATE_ID",
     );
@@ -127,11 +163,21 @@ describe("scheduleSummarySchema", () => {
   });
 
   it("rejects more late actions than scheduled actions", () => {
-    expectRejected(scheduleSummarySchema, { ...summary, lateActionCount: 3 }, "lateActionCount", "INCONSISTENT_STATE");
+    expectRejected(
+      scheduleSummarySchema,
+      { ...summary, lateActionCount: 3 },
+      "lateActionCount",
+      "INCONSISTENT_STATE",
+    );
   });
 
   it("rejects a negative risk threshold", () => {
-    expectRejected(scheduleSummarySchema, { ...summary, riskThresholdMinutes: -1 }, "riskThresholdMinutes", "OUT_OF_RANGE");
+    expectRejected(
+      scheduleSummarySchema,
+      { ...summary, riskThresholdMinutes: -1 },
+      "riskThresholdMinutes",
+      "OUT_OF_RANGE",
+    );
   });
 });
 
@@ -165,10 +211,19 @@ describe("planVerificationResultSchema", () => {
   });
 
   it("rejects isValid=false with no hard violation", () => {
-    expectRejected(planVerificationResultSchema, { ...validVerification(), isValid: false }, "isValid", "INCONSISTENT_STATE");
     expectRejected(
       planVerificationResultSchema,
-      { ...validVerification(), isValid: false, violations: [{ ...validViolation(), severity: "soft" }] },
+      { ...validVerification(), isValid: false },
+      "isValid",
+      "INCONSISTENT_STATE",
+    );
+    expectRejected(
+      planVerificationResultSchema,
+      {
+        ...validVerification(),
+        isValid: false,
+        violations: [{ ...validViolation(), severity: "soft" }],
+      },
       "isValid",
       "INCONSISTENT_STATE",
     );
@@ -186,12 +241,26 @@ describe("planVerificationResultSchema", () => {
 
 describe("constraintViolationSchema", () => {
   it("accepts a violation with null references", () => {
-    expectAccepted(constraintViolationSchema, { ...validViolation(), invariantId: null, actionId: null });
+    expectAccepted(constraintViolationSchema, {
+      ...validViolation(),
+      invariantId: null,
+      actionId: null,
+    });
   });
 
   it("requires an UPPER_SNAKE_CASE code and a known severity", () => {
-    expectRejected(constraintViolationSchema, { ...validViolation(), code: "approvalMissing" }, "code", "INVALID_FORMAT");
-    expectRejected(constraintViolationSchema, { ...validViolation(), severity: "critical" }, "severity", "INVALID_ENUM_VALUE");
+    expectRejected(
+      constraintViolationSchema,
+      { ...validViolation(), code: "approvalMissing" },
+      "code",
+      "INVALID_FORMAT",
+    );
+    expectRejected(
+      constraintViolationSchema,
+      { ...validViolation(), severity: "critical" },
+      "severity",
+      "INVALID_ENUM_VALUE",
+    );
   });
 
   it("rejects missing explanation", () => {

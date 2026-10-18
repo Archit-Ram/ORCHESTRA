@@ -52,8 +52,7 @@ export interface GraphFailure {
 }
 
 export type GraphValidationResult =
-  | { readonly ok: true; readonly graph: CommitmentGraph }
-  | GraphFailure;
+  { readonly ok: true; readonly graph: CommitmentGraph } | GraphFailure;
 
 /** Locale-independent code-unit comparison, so ordering never varies by host. */
 function compareIds(left: string, right: string): number {
@@ -62,8 +61,7 @@ function compareIds(left: string, right: string): number {
 }
 
 function compareIssues(left: GraphIssue, right: GraphIssue): number {
-  const byStage =
-    GRAPH_ISSUE_CODES.indexOf(left.code) - GRAPH_ISSUE_CODES.indexOf(right.code);
+  const byStage = GRAPH_ISSUE_CODES.indexOf(left.code) - GRAPH_ISSUE_CODES.indexOf(right.code);
   if (byStage !== 0) return byStage;
   return (
     compareIds(left.nodeId, right.nodeId) ||
@@ -134,9 +132,7 @@ function extractCycle(
  *
  * Complexity: O(V + E) for the algorithm plus O(V log V) for ID sorting.
  */
-export function buildCommitmentGraph(
-  nodes: readonly GraphNode[],
-): GraphValidationResult {
+export function buildCommitmentGraph(nodes: readonly GraphNode[]): GraphValidationResult {
   const issues = new Map<string, GraphIssue>();
   const addIssue = (issue: GraphIssue): void => {
     issues.set(`${issue.code}|${issue.nodeId}|${issue.dependencyId ?? ""}`, issue);

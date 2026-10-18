@@ -31,17 +31,17 @@ be added later against the same contract without touching callers.
 
 ## Data model
 
-| Table | Holds | Mutability |
-| --- | --- | --- |
-| `commitments` | one row per commitment (JSON body plus indexed columns) | version advances by exactly one; cannot be deleted |
-| `actions` | live state of each action; `idempotency_key` is `UNIQUE` | same; identity columns immutable |
-| `action_transitions` | every creation, status transition, and approval-status change | append-only |
-| `plans` / `plan_heads` | every plan version; head points at the current one | versions immutable except being superseded once |
-| `approvals` | approval decisions | append-only |
-| `approval_consumptions` | which approval was spent by which execution (`approval_id` is the primary key) | append-only |
-| `evidence` | minimal evidence records | append-only |
-| `events` | the external-event ledger | content immutable; applied events are final |
-| `executions` | one row per idempotency key: `running`, `succeeded`, `failed`, `outcomeUnknown` | identity immutable; finished is final |
+| Table                   | Holds                                                                           | Mutability                                         |
+| ----------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `commitments`           | one row per commitment (JSON body plus indexed columns)                         | version advances by exactly one; cannot be deleted |
+| `actions`               | live state of each action; `idempotency_key` is `UNIQUE`                        | same; identity columns immutable                   |
+| `action_transitions`    | every creation, status transition, and approval-status change                   | append-only                                        |
+| `plans` / `plan_heads`  | every plan version; head points at the current one                              | versions immutable except being superseded once    |
+| `approvals`             | approval decisions                                                              | append-only                                        |
+| `approval_consumptions` | which approval was spent by which execution (`approval_id` is the primary key)  | append-only                                        |
+| `evidence`              | minimal evidence records                                                        | append-only                                        |
+| `events`                | the external-event ledger                                                       | content immutable; applied events are final        |
+| `executions`            | one row per idempotency key: `running`, `succeeded`, `failed`, `outcomeUnknown` | identity immutable; finished is final              |
 
 Bodies are stored as JSON and **re-validated with the Prompt 2 schemas on every
 read**. Stored indexed columns (status, version, key) are cross-checked against
@@ -126,7 +126,7 @@ replan (new action and new plan version appear together or not at all).
   process; running it in a second live process would mislabel in-flight work.
 - **Exactly-once side effects are still not guaranteed** against a provider that
   has neither idempotency nor a way to query results (see Prompt 7). This layer
-  guarantees only that the *local* claim, approval spend, and status change are
+  guarantees only that the _local_ claim, approval spend, and status change are
   atomic and unique.
 - **Synchronous API.** SQLite calls block the event loop briefly. Acceptable for
   the demo; a worker or async driver would be needed at scale.
@@ -140,16 +140,16 @@ replan (new action and new plan version appear together or not at all).
 
 ## Suggested lines for `docs/implementation-status.md`
 
-| Requirement | Status | Evidence |
-| --- | --- | --- |
-| Repository interfaces and SQLite implementation | `tested` | `pnpm test:unit` (persistence tests) |
-| Transactions, rollback, savepoints | `tested` | `pnpm test:unit` |
-| Idempotency-key and approval-consumption uniqueness | `tested` | `pnpm test:unit` |
-| Optimistic version checks and concurrent-writer conflicts | `tested` | `pnpm test:unit` |
-| Every plan version and action transition persisted | `tested` | `pnpm test:unit` |
-| Event ledger: unique IDs and exactly-once application | `tested` | `pnpm test:unit` |
-| Restart recovery for `running` / `outcomeUnknown` | `tested` | `pnpm test:unit` |
-| DynamoDB adapter | `notStarted` | optional |
-| Executor, adapter registry, reconciliation | `notStarted` | Prompt 7 |
+| Requirement                                               | Status       | Evidence                             |
+| --------------------------------------------------------- | ------------ | ------------------------------------ |
+| Repository interfaces and SQLite implementation           | `tested`     | `pnpm test:unit` (persistence tests) |
+| Transactions, rollback, savepoints                        | `tested`     | `pnpm test:unit`                     |
+| Idempotency-key and approval-consumption uniqueness       | `tested`     | `pnpm test:unit`                     |
+| Optimistic version checks and concurrent-writer conflicts | `tested`     | `pnpm test:unit`                     |
+| Every plan version and action transition persisted        | `tested`     | `pnpm test:unit`                     |
+| Event ledger: unique IDs and exactly-once application     | `tested`     | `pnpm test:unit`                     |
+| Restart recovery for `running` / `outcomeUnknown`         | `tested`     | `pnpm test:unit`                     |
+| DynamoDB adapter                                          | `notStarted` | optional                             |
+| Executor, adapter registry, reconciliation                | `notStarted` | Prompt 7                             |
 
 Mark `tested` only after the suite passes in the real repository with real Vitest.

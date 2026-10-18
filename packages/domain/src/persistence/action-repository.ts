@@ -2,8 +2,23 @@ import { plannedActionSchema, type PlannedAction } from "../schemas/action.js";
 import type { ActionStatus, ApprovalStatus } from "../schemas/enums.js";
 import { assertActionTransition } from "../schemas/transitions.js";
 import { parseOrThrow } from "../schemas/validation.js";
-import type { ActionChange, ActionChangeKind, ActionRepository, ActionTransitionRecord, WriteMeta } from "./repositories.js";
-import { conflict, integer, integerOrNull, invalid, notFound, readBody, text, textOrNull } from "./row-helpers.js";
+import type {
+  ActionChange,
+  ActionChangeKind,
+  ActionRepository,
+  ActionTransitionRecord,
+  WriteMeta,
+} from "./repositories.js";
+import {
+  conflict,
+  integer,
+  integerOrNull,
+  invalid,
+  notFound,
+  readBody,
+  text,
+  textOrNull,
+} from "./row-helpers.js";
 import type { SqlDatabase, SqlRow } from "./sql-database.js";
 import type { TransactionManager } from "./transaction.js";
 
@@ -24,8 +39,31 @@ export class SqliteActionRepository implements ActionRepository {
         .prepare(
           "INSERT INTO actions (action_id, plan_id, version, tool_name, status, approval_status, idempotency_key, created_at, updated_at, body) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
-        .run(valid.actionId, planId, valid.version, valid.toolName, valid.status, valid.approvalStatus, valid.idempotencyKey, valid.createdAt, valid.updatedAt, JSON.stringify(valid));
-      this.recordTransition("created", null, valid.status, null, valid.approvalStatus, null, valid.version, valid.actionId, meta.at, meta.correlationId, meta.reason);
+        .run(
+          valid.actionId,
+          planId,
+          valid.version,
+          valid.toolName,
+          valid.status,
+          valid.approvalStatus,
+          valid.idempotencyKey,
+          valid.createdAt,
+          valid.updatedAt,
+          JSON.stringify(valid),
+        );
+      this.recordTransition(
+        "created",
+        null,
+        valid.status,
+        null,
+        valid.approvalStatus,
+        null,
+        valid.version,
+        valid.actionId,
+        meta.at,
+        meta.correlationId,
+        meta.reason,
+      );
     });
   }
 
@@ -35,11 +73,19 @@ export class SqliteActionRepository implements ActionRepository {
   }
 
   require(actionId: string): PlannedAction {
-    return this.get(actionId) ?? (() => { throw notFound("action", actionId); })();
+    return (
+      this.get(actionId) ??
+      (() => {
+        throw notFound("action", actionId);
+      })()
+    );
   }
 
   listByPlan(planId: string): PlannedAction[] {
-    return this.database.prepare("SELECT * FROM actions WHERE plan_id = ? ORDER BY action_id").all(planId).map((row) => this.hydrate(row));
+    return this.database
+      .prepare("SELECT * FROM actions WHERE plan_id = ? ORDER BY action_id")
+      .all(planId)
+      .map((row) => this.hydrate(row));
   }
 
   listByStatus(statuses: readonly ActionStatus[]): PlannedAction[] {
@@ -55,7 +101,11 @@ export class SqliteActionRepository implements ActionRepository {
     return this.transactions.run(() => {
       const current = this.require(change.actionId);
       if (current.version !== change.expectedVersion) {
-        throw conflict("action", { actionId: change.actionId, expectedVersion: change.expectedVersion, actualVersion: current.version });
+        throw conflict("action", {
+          actionId: change.actionId,
+          expectedVersion: change.expectedVersion,
+          actualVersion: current.version,
+        });
       }
       if (change.toStatus === undefined && change.approvalStatus === undefined) {
         throw invalid("action", "a change must set a status or an approval status");
@@ -72,13 +122,35 @@ export class SqliteActionRepository implements ActionRepository {
         "persistence.actions.apply",
       );
       const result = this.database
-        .prepare("UPDATE actions SET version = ?, status = ?, approval_status = ?, updated_at = ?, body = ? WHERE action_id = ? AND version = ?")
-        .run(next.version, next.status, next.approvalStatus, next.updatedAt, JSON.stringify(next), next.actionId, change.expectedVersion);
-      if (result.changes !== 1) throw conflict("action", { actionId: change.actionId, expectedVersion: change.expectedVersion });
+        .prepare(
+          "UPDATE actions SET version = ?, status = ?, approval_status = ?, updated_at = ?, body = ? WHERE action_id = ? AND version = ?",
+        )
+        .run(
+          next.version,
+          next.status,
+          next.approvalStatus,
+          next.updatedAt,
+          JSON.stringify(next),
+          next.actionId,
+          change.expectedVersion,
+        );
+      if (result.changes !== 1)
+        throw conflict("action", {
+          actionId: change.actionId,
+          expectedVersion: change.expectedVersion,
+        });
       this.recordTransition(
         change.toStatus === undefined ? "approvalStatusChange" : "statusTransition",
-        current.status, next.status, current.approvalStatus, next.approvalStatus,
-        current.version, next.version, next.actionId, change.at, change.correlationId, change.reason,
+        current.status,
+        next.status,
+        current.approvalStatus,
+        next.approvalStatus,
+        current.version,
+        next.version,
+        next.actionId,
+        change.at,
+        change.correlationId,
+        change.reason,
       );
       return next;
     });
@@ -86,7 +158,9 @@ export class SqliteActionRepository implements ActionRepository {
 
   getTransitions(actionId: string): ActionTransitionRecord[] {
     return this.database
-      .prepare("SELECT * FROM action_transitions WHERE action_id = ? ORDER BY to_version, transition_id")
+      .prepare(
+        "SELECT * FROM action_transitions WHERE action_id = ? ORDER BY to_version, transition_id",
+      )
       .all(actionId)
       .map((row) => ({
         transitionId: integer(row, "transition_id"),
@@ -121,7 +195,19 @@ export class SqliteActionRepository implements ActionRepository {
       .prepare(
         "INSERT INTO action_transitions (action_id, change_kind, from_status, to_status, from_approval_status, to_approval_status, from_version, to_version, occurred_at, correlation_id, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       )
-      .run(actionId, kind, fromStatus, toStatus, fromApproval, toApproval, fromVersion, toVersion, at, correlationId, reason);
+      .run(
+        actionId,
+        kind,
+        fromStatus,
+        toStatus,
+        fromApproval,
+        toApproval,
+        fromVersion,
+        toVersion,
+        at,
+        correlationId,
+        reason,
+      );
   }
 
   private hydrate(row: SqlRow): PlannedAction {
@@ -131,7 +217,10 @@ export class SqliteActionRepository implements ActionRepository {
       action.approvalStatus === text(row, "approval_status") &&
       action.version === integer(row, "version") &&
       action.idempotencyKey === text(row, "idempotency_key");
-    if (!agrees) throw invalid("action", "stored columns disagree with the stored body", { actionId: action.actionId });
+    if (!agrees)
+      throw invalid("action", "stored columns disagree with the stored body", {
+        actionId: action.actionId,
+      });
     return action;
   }
 }

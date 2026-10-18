@@ -50,7 +50,10 @@ export class SqliteStore {
   readonly migration: MigrationResult;
   private readonly transactions: TransactionManager;
 
-  private constructor(private readonly database: SqlDatabase, migration: MigrationResult) {
+  private constructor(
+    private readonly database: SqlDatabase,
+    migration: MigrationResult,
+  ) {
     this.transactions = new TransactionManager(database);
     this.commitments = new SqliteCommitmentRepository(database, this.transactions);
     this.actions = new SqliteActionRepository(database, this.transactions);
@@ -85,7 +88,9 @@ export class SqliteStore {
 
   /** Newest schema version recorded in the database. */
   schemaVersion(): number {
-    const row = this.database.prepare("SELECT MAX(version) AS version FROM schema_migrations").get();
+    const row = this.database
+      .prepare("SELECT MAX(version) AS version FROM schema_migrations")
+      .get();
     const version = row?.["version"];
     return typeof version === "number" ? version : 0;
   }
@@ -121,10 +126,19 @@ export class SqliteStore {
     return this.transaction(() => {
       const action = this.actions.require(grant.actionId);
       if (computeActionPayloadHash(action) !== grant.payloadHash) {
-        throw new DomainError({ code: "APPROVAL_PAYLOAD_MISMATCH", metadata: { actionId: grant.actionId, reason: "the action changed after the gate allowed it" } });
+        throw new DomainError({
+          code: "APPROVAL_PAYLOAD_MISMATCH",
+          metadata: {
+            actionId: grant.actionId,
+            reason: "the action changed after the gate allowed it",
+          },
+        });
       }
       if (action.idempotencyKey !== grant.idempotencyKey) {
-        throw new DomainError({ code: "IDEMPOTENCY_CONFLICT", metadata: { actionId: grant.actionId, reason: "grant key does not match the action" } });
+        throw new DomainError({
+          code: "IDEMPOTENCY_CONFLICT",
+          metadata: { actionId: grant.actionId, reason: "grant key does not match the action" },
+        });
       }
       this.executions.begin({
         idempotencyKey: grant.idempotencyKey,
@@ -137,7 +151,12 @@ export class SqliteStore {
         correlationId: input.correlationId,
       });
       if (grant.approvalId !== null) {
-        this.approvals.consume({ approvalId: grant.approvalId, actionId: grant.actionId, idempotencyKey: grant.idempotencyKey, at: input.at });
+        this.approvals.consume({
+          approvalId: grant.approvalId,
+          actionId: grant.actionId,
+          idempotencyKey: grant.idempotencyKey,
+          at: input.at,
+        });
       }
       const running = this.actions.apply({
         actionId: grant.actionId,
@@ -184,7 +203,11 @@ export class SqliteStore {
         toStatus: input.outcome,
       });
       if (input.evidence !== undefined) {
-        const evidence = parseOrThrow(evidenceRecordSchema, input.evidence, "persistence.finishExecution.evidence");
+        const evidence = parseOrThrow(
+          evidenceRecordSchema,
+          input.evidence,
+          "persistence.finishExecution.evidence",
+        );
         if (evidence.subjectType !== "action" || evidence.subjectId !== existing.actionId) {
           throw invalid("evidence", "evidence must be about the action that was executed");
         }
@@ -201,12 +224,20 @@ export class SqliteStore {
    * `succeeded`) so nothing is retried blindly. Call only at startup, before
    * accepting work. Returns what was changed; a second call returns nothing.
    */
-  markInterruptedExecutionsUnknown(input: { readonly at: string; readonly correlationId: string }): InterruptedExecution[] {
+  markInterruptedExecutionsUnknown(input: {
+    readonly at: string;
+    readonly correlationId: string;
+  }): InterruptedExecution[] {
     return this.transaction(() => {
       const interrupted: InterruptedExecution[] = [];
       for (const execution of this.executions.listByStatus(["running"])) {
         const action = this.actions.require(execution.actionId);
-        this.executions.complete({ idempotencyKey: execution.idempotencyKey, status: "outcomeUnknown", finishedAt: input.at, providerReference: null });
+        this.executions.complete({
+          idempotencyKey: execution.idempotencyKey,
+          status: "outcomeUnknown",
+          finishedAt: input.at,
+          providerReference: null,
+        });
         this.actions.apply({
           actionId: action.actionId,
           expectedVersion: action.version,
@@ -215,7 +246,11 @@ export class SqliteStore {
           reason: "processStoppedDuringExecution",
           toStatus: "outcomeUnknown",
         });
-        interrupted.push({ actionId: execution.actionId, idempotencyKey: execution.idempotencyKey, startedAt: execution.startedAt });
+        interrupted.push({
+          actionId: execution.actionId,
+          idempotencyKey: execution.idempotencyKey,
+          startedAt: execution.startedAt,
+        });
       }
       return interrupted;
     });
@@ -237,7 +272,10 @@ export class SqliteStore {
       if (stored.appliedAt !== null) return { applied: false } as const;
       const result = handler(stored.event);
       if (!this.events.markApplied(input.eventId, input.at, input.summary ?? null)) {
-        throw new DomainError({ code: "ACTION_STATE_CONFLICT", metadata: { eventId: input.eventId, reason: "applied concurrently" } });
+        throw new DomainError({
+          code: "ACTION_STATE_CONFLICT",
+          metadata: { eventId: input.eventId, reason: "applied concurrently" },
+        });
       }
       return { applied: true, result } as const;
     });

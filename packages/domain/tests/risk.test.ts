@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { DomainError } from "../src/errors/index.js";
-import { classifyDeadlineRisk, classifyRiskFromMillis, DEFAULT_RISK_THRESHOLD_MINUTES, isValidRiskThreshold } from "../src/scheduler/risk.js";
+import {
+  classifyDeadlineRisk,
+  classifyRiskFromMillis,
+  DEFAULT_RISK_THRESHOLD_MINUTES,
+  isValidRiskThreshold,
+} from "../src/scheduler/risk.js";
 
 const DEADLINE = "2026-10-23T17:00:00.000Z";
 
@@ -62,8 +67,12 @@ describe("classifyDeadlineRisk", () => {
   });
 
   it("is notApplicable, not safe, without a deadline", () => {
-    expect(classifyDeadlineRisk({ deadlineAt: null, finishAt: DEADLINE, deadlineKind: "hard" })).toEqual({ risk: "notApplicable", slackMinutes: null });
-    expect(classifyDeadlineRisk({ deadlineAt: null, finishAt: null, deadlineKind: "hard" }).risk).toBe("notApplicable");
+    expect(
+      classifyDeadlineRisk({ deadlineAt: null, finishAt: DEADLINE, deadlineKind: "hard" }),
+    ).toEqual({ risk: "notApplicable", slackMinutes: null });
+    expect(
+      classifyDeadlineRisk({ deadlineAt: null, finishAt: null, deadlineKind: "hard" }).risk,
+    ).toBe("notApplicable");
   });
 
   it("is unknown when a deadline exists but the finish cannot be computed", () => {
@@ -72,7 +81,11 @@ describe("classifyDeadlineRisk", () => {
 
   it("treats equal instants in different timezones identically", () => {
     expect(
-      classifyDeadlineRisk({ deadlineAt: "2026-10-23T22:30:00+05:30", finishAt: DEADLINE, deadlineKind: "hard" }).risk,
+      classifyDeadlineRisk({
+        deadlineAt: "2026-10-23T22:30:00+05:30",
+        finishAt: DEADLINE,
+        deadlineKind: "hard",
+      }).risk,
     ).toBe("critical");
   });
 
@@ -89,7 +102,9 @@ describe("classifyDeadlineRisk", () => {
   it("throws INVALID_INPUT for malformed or timezone-less timestamps", () => {
     for (const bad of ["tomorrow", "2026-10-23T17:00:00", ""]) {
       expect(() => risk(bad)).toThrow(DomainError);
-      expect(() => classifyDeadlineRisk({ deadlineAt: bad, finishAt: DEADLINE, deadlineKind: "hard" })).toThrow(DomainError);
+      expect(() =>
+        classifyDeadlineRisk({ deadlineAt: bad, finishAt: DEADLINE, deadlineKind: "hard" }),
+      ).toThrow(DomainError);
     }
   });
 
@@ -110,6 +125,13 @@ describe("classifyDeadlineRisk", () => {
 describe("classifyRiskFromMillis", () => {
   it("matches the string wrapper", () => {
     const deadlineMs = Date.parse(DEADLINE);
-    expect(classifyRiskFromMillis({ deadlineMs, finishMs: deadlineMs - 10 * 60_000, deadlineKind: "hard", riskThresholdMinutes: 30 })).toEqual(risk(at(10)));
+    expect(
+      classifyRiskFromMillis({
+        deadlineMs,
+        finishMs: deadlineMs - 10 * 60_000,
+        deadlineKind: "hard",
+        riskThresholdMinutes: 30,
+      }),
+    ).toEqual(risk(at(10)));
   });
 });

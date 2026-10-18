@@ -1,9 +1,9 @@
 # ORCHESTRA — Algorithm Documentation
 
-> **Version:** 0.1 (Prompt 0 — Design phase)
-> **Last updated:** 2026-10-13
+> **Version:** 0.6 (Prompt 6 — Persistence & Integrity complete)
+> **Last updated:** 2026-10-18
 
-This document will be populated as each algorithm is implemented. See `implementation-status.md` for current status.
+This document summarizes the core deterministic algorithms implemented in ORCHESTRA. See `implementation-status.md` for overall status.
 
 ## Algorithm A: Intent Normalization
 
@@ -12,31 +12,38 @@ This document will be populated as each algorithm is implemented. See `implement
 
 ## Algorithm B: Commitment Graph Construction & Validation
 
-**Status:** notStarted
-**Implementation:** Prompt 3
-**Algorithm:** Kahn's topological sort, O(V+E)
+**Status:** tested
+**Implementation:** Prompt 3 (`packages/domain/src/graph/commitment-graph.ts`)
+**Algorithm:** Kahn's topological sort, O(V+E) with deterministic sorting by node identifier
+**Documentation:** [algorithms-graph.md](algorithms-graph.md)
 
 ## Algorithm C: Deterministic Schedule Generation
 
-**Status:** notStarted
-**Implementation:** Prompt 4
-**Algorithm:** Serial schedule generation scheme, single abstract resource
+**Status:** tested
+**Implementation:** Prompt 4 (`packages/domain/src/scheduler/scheduler.ts`)
+**Algorithm:** Serial schedule generation scheme for a single abstract execution resource
+**Documentation:** [algorithms-scheduler.md](algorithms-scheduler.md)
 
 ## Algorithm D: Deadline Slack & Risk Classification
 
-**Status:** notStarted
-**Implementation:** Prompt 4
-**Algorithm:** Deterministic labels from slack calculation
+**Status:** tested
+**Implementation:** Prompt 4 (`packages/domain/src/scheduler/risk.ts`, `packages/domain/src/scheduler/time-zone.ts`)
+**Algorithm:** Deterministic slack calculation (`slack = deadline - scheduledFinish`) with calibrated categorical labels (`infeasible`, `critical`, `atRisk`, `onTrack`, `notApplicable`, `unknown`) and DST-safe local-time resolution
+**Documentation:** [algorithms-scheduler.md](algorithms-scheduler.md)
 
 ## Algorithm E: Plan Verification
 
-**Status:** notStarted
-**Implementation:** Prompt 5
+**Status:** tested
+**Implementation:** Prompt 5 (`packages/domain/src/verifier/plan-verifier.ts`)
+**Algorithm:** Multi-stage deterministic invariant checking (graph, ordering, deadlines, protected windows, approvals, schemas, preconditions, idempotency, version consistency)
+**Documentation:** [algorithms-verifier-policy.md](algorithms-verifier-policy.md)
 
 ## Algorithm F: Policy & Approval Enforcement
 
-**Status:** notStarted
-**Implementation:** Prompt 5
+**Status:** tested
+**Implementation:** Prompt 5 (`packages/domain/src/policy/approval.ts`, `packages/domain/src/policy/sha256.ts`, `packages/domain/src/verifier/execution-gate.ts`)
+**Algorithm:** Canonical JSON serialization, pure-TS SHA-256 payload hashing, approval binding (actionId, payloadHash, planVersion), expiry, authorized approvers, and execution gate re-checking immediately before execution
+**Documentation:** [algorithms-verifier-policy.md](algorithms-verifier-policy.md)
 
 ## Algorithm G: Failure-Aware Action Execution
 

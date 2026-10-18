@@ -30,9 +30,7 @@ export const toolWarningSchema = z
  * fulfilled. Successful results must carry `data` (use `{}` if there is none);
  * failed results must carry `error` and must not carry `data`.
  */
-export function toolResultSchema<TData extends z.ZodTypeAny>(
-  dataSchema: TData,
-) {
+export function toolResultSchema<TData extends z.ZodTypeAny>(dataSchema: TData) {
   return z
     .object({
       success: z.boolean(),
@@ -45,14 +43,20 @@ export function toolResultSchema<TData extends z.ZodTypeAny>(
     .superRefine((result, ctx) => {
       if (result.success) {
         if (result.data === undefined) {
-          addTaggedIssue(ctx, "REQUIRED_FIELD_MISSING", "A successful result needs data.", ["data"]);
+          addTaggedIssue(ctx, "REQUIRED_FIELD_MISSING", "A successful result needs data.", [
+            "data",
+          ]);
         }
         if (result.error !== undefined) {
-          addTaggedIssue(ctx, "INCONSISTENT_STATE", "A successful result cannot carry an error.", ["error"]);
+          addTaggedIssue(ctx, "INCONSISTENT_STATE", "A successful result cannot carry an error.", [
+            "error",
+          ]);
         }
       } else {
         if (result.error === undefined) {
-          addTaggedIssue(ctx, "REQUIRED_FIELD_MISSING", "A failed result needs an error.", ["error"]);
+          addTaggedIssue(ctx, "REQUIRED_FIELD_MISSING", "A failed result needs an error.", [
+            "error",
+          ]);
         }
         if (result.data !== undefined) {
           addTaggedIssue(ctx, "INCONSISTENT_STATE", "A failed result cannot carry data.", ["data"]);
