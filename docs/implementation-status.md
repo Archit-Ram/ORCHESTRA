@@ -1,7 +1,7 @@
 # ORCHESTRA — Implementation Status
 
-> **Last updated:** 2026-10-18T23:54:00Z
-> **Phase:** Prompt 7 — Failure-Aware Executor and Adapter Registry Complete
+> **Last updated:** 2026-10-19T00:15:00Z
+> **Phase:** Prompt 8 — Intent Model and Bedrock Integration Complete
 
 All requirements from the Engineering Specification are tracked below.
 Status values: `notStarted` | `inProgress` | `implemented` | `tested` | `blocked`
@@ -25,7 +25,7 @@ Status values: `notStarted` | `inProgress` | `implemented` | `tested` | `blocked
 
 | Requirement                             | Status     | Evidence                                | Test Command     |
 | --------------------------------------- | ---------- | --------------------------------------- | ---------------- |
-| A: Intent normalization (Bedrock)       | notStarted | —                                       | —                |
+| A: Intent normalization (Bedrock)       | tested     | `packages/domain/src/intent/`           | `pnpm test:unit` |
 | B: Commitment graph (Kahn's toposort)   | tested     | `packages/domain/src/graph/`            | `pnpm test:unit` |
 | C: Deterministic schedule generation    | tested     | `packages/domain/src/scheduler/`        | `pnpm test:unit` |
 | D: Deadline slack & risk classification | tested     | `packages/domain/src/scheduler/risk.ts` | `pnpm test:unit` |
@@ -44,7 +44,7 @@ Status values: `notStarted` | `inProgress` | `implemented` | `tested` | `blocked
 | MCP tool schemas (9 tools)                     | notStarted | —                                                    | —                |
 | Adapter registry                               | tested     | `packages/domain/src/execution/adapter-registry.ts`  | `pnpm test:unit` |
 | Simulator adapter (labelled)                   | tested     | `packages/domain/src/execution/simulator-adapter.ts` | `pnpm test:unit` |
-| AWS Bedrock integration (real)                 | notStarted | —                                                    | —                |
+| AWS Bedrock integration (real)                 | tested     | `packages/domain/src/intent/bedrock-adapter.ts`      | `pnpm test:unit` |
 
 ## 4. Logging & Diagnostics (Section 7)
 

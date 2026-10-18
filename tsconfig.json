@@ -18,7 +18,8 @@
     "verbatimModuleSyntax": true,
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "types": ["node"]
   },
   "exclude": ["node_modules", "dist", "build", "coverage"]
 }

@@ -7,8 +7,10 @@ This document summarizes the core deterministic algorithms implemented in ORCHES
 
 ## Algorithm A: Intent Normalization
 
-**Status:** notStarted
-**Implementation:** Prompt 8
+**Status:** tested
+**Implementation:** Prompt 8 (`packages/domain/src/intent/intent-normalizer.ts`, `packages/domain/src/intent/bedrock-adapter.ts`, `packages/domain/src/intent/intent-service.ts`)
+**Algorithm:** Untrusted LLM output parsing, runtime schema validation, duplicate ID rejection, referential integrity check, Kahn's cycle detection, tool catalog verification, timestamp normalization, and safety-critical ambiguity preservation
+**Documentation:** [intent-and-bedrock.md](intent-and-bedrock.md)
 
 ## Algorithm B: Commitment Graph Construction & Validation
 

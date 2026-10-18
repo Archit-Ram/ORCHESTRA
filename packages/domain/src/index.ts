@@ -16,3 +16,4 @@ export * from "./policy/index.js";
 export * from "./verifier/index.js";
 export * from "./persistence/index.js";
 export * from "./execution/index.js";
+export * from "./intent/index.js";
