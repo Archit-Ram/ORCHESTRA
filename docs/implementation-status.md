@@ -1,7 +1,7 @@
 # ORCHESTRA — Implementation Status
 
-> **Last updated:** 2026-10-18T23:25:00Z
-> **Phase:** Prompt 6 — Persistence, Event Ledger, and Concurrency Complete
+> **Last updated:** 2026-10-18T23:54:00Z
+> **Phase:** Prompt 7 — Failure-Aware Executor and Adapter Registry Complete
 
 All requirements from the Engineering Specification are tracked below.
 Status values: `notStarted` | `inProgress` | `implemented` | `tested` | `blocked`
@@ -31,20 +31,20 @@ Status values: `notStarted` | `inProgress` | `implemented` | `tested` | `blocked
 | D: Deadline slack & risk classification | tested     | `packages/domain/src/scheduler/risk.ts` | `pnpm test:unit` |
 | E: Plan verification (independent)      | tested     | `packages/domain/src/verifier/`         | `pnpm test:unit` |
 | F: Policy & approval enforcement        | tested     | `packages/domain/src/policy/`           | `pnpm test:unit` |
-| G: Failure-aware action execution       | notStarted | —                                       | —                |
+| G: Failure-aware action execution       | tested     | `packages/domain/src/execution/`        | `pnpm test:unit` |
 | H: Minimal-impact replanning            | notStarted | —                                       | —                |
 | I: Evidence-based commitment status     | notStarted | —                                       | —                |
 | J: Baseline benchmark                   | notStarted | —                                       | —                |
 
 ## 3. MCP Server & Adapters (Section 6)
 
-| Requirement                                    | Status     | Evidence | Test Command |
-| ---------------------------------------------- | ---------- | -------- | ------------ |
-| MCP server (Streamable HTTP, spec ≥2025-11-25) | notStarted | —        | —            |
-| MCP tool schemas (9 tools)                     | notStarted | —        | —            |
-| Adapter registry                               | notStarted | —        | —            |
-| Simulator adapter (labelled)                   | notStarted | —        | —            |
-| AWS Bedrock integration (real)                 | notStarted | —        | —            |
+| Requirement                                    | Status     | Evidence                                             | Test Command     |
+| ---------------------------------------------- | ---------- | ---------------------------------------------------- | ---------------- |
+| MCP server (Streamable HTTP, spec ≥2025-11-25) | notStarted | —                                                    | —                |
+| MCP tool schemas (9 tools)                     | notStarted | —                                                    | —                |
+| Adapter registry                               | tested     | `packages/domain/src/execution/adapter-registry.ts`  | `pnpm test:unit` |
+| Simulator adapter (labelled)                   | tested     | `packages/domain/src/execution/simulator-adapter.ts` | `pnpm test:unit` |
+| AWS Bedrock integration (real)                 | notStarted | —                                                    | —                |
 
 ## 4. Logging & Diagnostics (Section 7)
 

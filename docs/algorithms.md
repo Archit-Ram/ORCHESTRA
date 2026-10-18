@@ -47,8 +47,10 @@ This document summarizes the core deterministic algorithms implemented in ORCHES
 
 ## Algorithm G: Failure-Aware Action Execution
 
-**Status:** notStarted
-**Implementation:** Prompt 7
+**Status:** tested
+**Implementation:** Prompt 7 (`packages/domain/src/execution/action-executor.ts`, `packages/domain/src/execution/adapter-registry.ts`, `packages/domain/src/execution/simulator-adapter.ts`)
+**Algorithm:** Multi-step failure-aware execution sequence (pre-execution gate, persist running before side effect, adapter execution with timeout, definite rejection vs timeout classification, automated reconciliation, and explicit uncertainty retention)
+**Documentation:** [execution-and-adapters.md](execution-and-adapters.md)
 
 ## Algorithm H: Minimal-Impact Replanning
 

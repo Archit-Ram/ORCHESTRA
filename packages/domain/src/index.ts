@@ -3,13 +3,16 @@
  *
  * Core domain types, schemas, algorithms, and business logic for ORCHESTRA.
  * This package contains no external service dependencies.
- *
- * Modules will be added in subsequent implementation phases:
- * - Prompt 2: schemas, typed errors
- * - Prompt 3: commitment graph
- * - Prompt 4: scheduler, risk engine
- * - Prompt 5: verifier, policy engine
  */
 
 /** Package identifier used in structured logs. */
 export const DOMAIN_PACKAGE = "@orchestra/domain" as const;
+
+export * from "./errors/index.js";
+export * from "./schemas/index.js";
+export * from "./graph/index.js";
+export * from "./scheduler/index.js";
+export * from "./policy/index.js";
+export * from "./verifier/index.js";
+export * from "./persistence/index.js";
+export * from "./execution/index.js";
