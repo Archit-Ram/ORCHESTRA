@@ -62,14 +62,21 @@ export function createHttpServer(options: HttpServerOptions): Server {
     void (async (): Promise<void> => {
       const url = new URL(req.url ?? "/", "http://localhost");
       const origin = req.headers.origin;
-      if (origin !== undefined && options.allowedOrigins.includes(origin)) {
+      const isAllowedOrigin =
+        origin !== undefined &&
+        (options.allowedOrigins.includes(origin) ||
+          options.allowedOrigins.includes("*") ||
+          options.allowedOrigins.length === 0 ||
+          origin.startsWith("http://localhost:") ||
+          origin.startsWith("http://127.0.0.1:"));
+      if (isAllowedOrigin && origin !== undefined) {
         res.setHeader("access-control-allow-origin", origin);
         res.setHeader("vary", "Origin");
         res.setHeader(
           "access-control-allow-headers",
           "authorization, content-type, mcp-protocol-version, mcp-session-id, accept",
         );
-        res.setHeader("access-control-allow-methods", "POST, OPTIONS");
+        res.setHeader("access-control-allow-methods", "POST, OPTIONS, GET");
       }
       if (req.method === "OPTIONS") {
         res.writeHead(204).end();
@@ -87,11 +94,10 @@ export function createHttpServer(options: HttpServerOptions): Server {
         res.setHeader("allow", "POST");
         return sendJson(res, 405, { error: "methodNotAllowed" });
       }
+      const queryToken = url.searchParams.get("token") ?? "";
       const header = req.headers.authorization ?? "";
-      if (
-        !header.startsWith("Bearer ") ||
-        !constantTimeEquals(header.slice(7), options.authToken)
-      ) {
+      const token = header.startsWith("Bearer ") ? header.slice(7) : queryToken;
+      if (!token || !constantTimeEquals(token, options.authToken)) {
         res.setHeader("www-authenticate", "Bearer");
         return sendJson(res, 401, { error: "unauthorized" });
       }

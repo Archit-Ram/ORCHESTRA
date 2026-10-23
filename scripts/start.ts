@@ -13,7 +13,8 @@ const port = process.env["MCP_PORT"] ?? "3002";
 const host = process.env["MCP_HOST"] ?? "127.0.0.1";
 process.stdout.write(
   `\nORCHESTRA MCP server (SIMULATOR) will listen on http://${host}:${port}/mcp\n` +
-    `Send the header  Authorization: Bearer <token above>\n` +
+    `Inspector URL:   http://${host}:${port}/mcp?token=${process.env["MCP_AUTH_TOKEN"]}\n` +
+    `Or send header:  Authorization: Bearer ${process.env["MCP_AUTH_TOKEN"]}\n` +
     `Health check:    http://${host}:${port}/health/live\n` +
     `Try it:          npx @modelcontextprotocol/inspector  (Streamable HTTP, URL above)\n` +
     `Bedrock:         ${(process.env["BEDROCK_MODEL_ID"] ?? "") === "" ? "not configured (free-text requests return BEDROCK_UNAVAILABLE)" : "configured"}\n\n`,
