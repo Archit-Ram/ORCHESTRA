@@ -40,6 +40,34 @@ export interface ActionChange {
   readonly approvalStatus?: ApprovalStatus;
 }
 
+/** A change to when an unstarted action may run, or how long it is expected to take. */
+export interface ActionScheduleRevision {
+  readonly actionId: string;
+  readonly expectedVersion: number;
+  readonly at: string;
+  readonly correlationId: string;
+  readonly reason: string;
+  readonly estimatedDurationMinutes?: number;
+  readonly earliestStartAt?: string | null;
+  readonly deadlineAt?: string | null;
+}
+
+export interface ActionScheduleRevisionRecord {
+  readonly revisionId: number;
+  readonly actionId: string;
+  readonly fromVersion: number;
+  readonly toVersion: number;
+  readonly fromEstimatedDurationMinutes: number;
+  readonly toEstimatedDurationMinutes: number;
+  readonly fromEarliestStartAt: string | null;
+  readonly toEarliestStartAt: string | null;
+  readonly fromDeadlineAt: string | null;
+  readonly toDeadlineAt: string | null;
+  readonly occurredAt: string;
+  readonly correlationId: string;
+  readonly reason: string;
+}
+
 export type ActionChangeKind = "created" | "statusTransition" | "approvalStatusChange";
 
 export interface ActionTransitionRecord {
@@ -72,6 +100,16 @@ export interface ActionRepository {
    */
   apply(change: ActionChange): PlannedAction;
   getTransitions(actionId: string): ActionTransitionRecord[];
+  /**
+   * Changes an unstarted action's duration or time bounds (never its tool,
+   * input, or idempotency key, so an approval's payload hash stays the same).
+   * Allowed only while the action is proposed, ready, or awaitingApproval: a
+   * running or finished action is never rewritten. Checks the expected
+   * version, bumps the version by one, and appends a revision record, all
+   * atomically. Returns the stored action.
+   */
+  reviseSchedule(change: ActionScheduleRevision): PlannedAction;
+  getScheduleRevisions(actionId: string): ActionScheduleRevisionRecord[];
 }
 
 export interface PlanRepository {

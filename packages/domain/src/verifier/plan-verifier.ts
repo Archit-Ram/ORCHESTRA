@@ -162,7 +162,8 @@ function normalizeRecipient(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function overlapsWindow(
+/** Whether an interval touches a protected window (zero-length intervals count when inside it). */
+export function overlapsWindow(
   startMs: number,
   finishMs: number,
   windowStart: number,

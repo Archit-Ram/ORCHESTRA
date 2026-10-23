@@ -1,7 +1,7 @@
 # ORCHESTRA — Implementation Status
 
-> **Last updated:** 2026-10-19T00:15:00Z
-> **Phase:** Prompt 8 — Intent Model and Bedrock Integration Complete
+> **Last updated:** 2026-10-23T11:15:00Z
+> **Phase:** Prompt 9 — Minimal-Impact Replanning Complete and Tested
 
 All requirements from the Engineering Specification are tracked below.
 Status values: `notStarted` | `inProgress` | `implemented` | `tested` | `blocked`
@@ -23,18 +23,18 @@ Status values: `notStarted` | `inProgress` | `implemented` | `tested` | `blocked
 
 ## 2. Algorithms (Section 5)
 
-| Requirement                             | Status     | Evidence                                | Test Command     |
-| --------------------------------------- | ---------- | --------------------------------------- | ---------------- |
-| A: Intent normalization (Bedrock)       | tested     | `packages/domain/src/intent/`           | `pnpm test:unit` |
-| B: Commitment graph (Kahn's toposort)   | tested     | `packages/domain/src/graph/`            | `pnpm test:unit` |
-| C: Deterministic schedule generation    | tested     | `packages/domain/src/scheduler/`        | `pnpm test:unit` |
-| D: Deadline slack & risk classification | tested     | `packages/domain/src/scheduler/risk.ts` | `pnpm test:unit` |
-| E: Plan verification (independent)      | tested     | `packages/domain/src/verifier/`         | `pnpm test:unit` |
-| F: Policy & approval enforcement        | tested     | `packages/domain/src/policy/`           | `pnpm test:unit` |
-| G: Failure-aware action execution       | tested     | `packages/domain/src/execution/`        | `pnpm test:unit` |
-| H: Minimal-impact replanning            | notStarted | —                                       | —                |
-| I: Evidence-based commitment status     | notStarted | —                                       | —                |
-| J: Baseline benchmark                   | notStarted | —                                       | —                |
+| Requirement                             | Status     | Evidence                                                        | Test Command     |
+| --------------------------------------- | ---------- | --------------------------------------------------------------- | ---------------- |
+| A: Intent normalization (Bedrock)       | tested     | `packages/domain/src/intent/`                                   | `pnpm test:unit` |
+| B: Commitment graph (Kahn's toposort)   | tested     | `packages/domain/src/graph/`                                    | `pnpm test:unit` |
+| C: Deterministic schedule generation    | tested     | `packages/domain/src/scheduler/`                                | `pnpm test:unit` |
+| D: Deadline slack & risk classification | tested     | `packages/domain/src/scheduler/risk.ts`                         | `pnpm test:unit` |
+| E: Plan verification (independent)      | tested     | `packages/domain/src/verifier/`                                 | `pnpm test:unit` |
+| F: Policy & approval enforcement        | tested     | `packages/domain/src/policy/`                                   | `pnpm test:unit` |
+| G: Failure-aware action execution       | tested     | `packages/domain/src/execution/`                                | `pnpm test:unit` |
+| H: Minimal-impact replanning            | tested     | `packages/domain/src/replanning/`; tests in `tests/replanning/` | `pnpm test:unit` |
+| I: Evidence-based commitment status     | notStarted | —                                                               | —                |
+| J: Baseline benchmark                   | notStarted | —                                                               | —                |
 
 ## 3. MCP Server & Adapters (Section 6)
 
@@ -123,20 +123,20 @@ Status values: `notStarted` | `inProgress` | `implemented` | `tested` | `blocked
 
 ## 11. End-to-End Acceptance Scenarios (Section 13)
 
-| Scenario                                | Status     | Evidence                                                   |
-| --------------------------------------- | ---------- | ---------------------------------------------------------- |
-| 1: Normal commitment completion         | notStarted | —                                                          |
-| 2: Approval bypass attempt              | tested     | Domain-level in `execution-gate.test.ts`                   |
-| 3: Approval payload tampering           | tested     | Domain-level in `policy.test.ts`, `execution-gate.test.ts` |
-| 4: Protected-time conflict              | tested     | Domain-level in `plan-verifier.test.ts`                    |
-| 5: Dependency cycle                     | tested     | Domain-level in `graph.test.ts`                            |
-| 6: Deadline becomes infeasible          | notStarted | —                                                          |
-| 7: Provider timeout after side effect   | notStarted | —                                                          |
-| 8: Duplicate request / idempotency      | tested     | Persistence-level in `execution-store.test.ts`             |
-| 9: Persistence failure after success    | tested     | Persistence-level in `recovery.test.ts`                    |
-| 10: Bedrock malformed response          | notStarted | —                                                          |
-| 11: MCP protocol smoke test             | notStarted | —                                                          |
-| 12: Replanning preserves completed work | notStarted | —                                                          |
-| 13: Trace completeness                  | notStarted | —                                                          |
-| 14: Simulator/live separation           | notStarted | —                                                          |
-| 15: Baseline benchmark integrity        | notStarted | —                                                          |
+| Scenario                                | Status     | Evidence                                                     |
+| --------------------------------------- | ---------- | ------------------------------------------------------------ |
+| 1: Normal commitment completion         | notStarted | —                                                            |
+| 2: Approval bypass attempt              | tested     | Domain-level in `execution-gate.test.ts`                     |
+| 3: Approval payload tampering           | tested     | Domain-level in `policy.test.ts`, `execution-gate.test.ts`   |
+| 4: Protected-time conflict              | tested     | Domain-level in `plan-verifier.test.ts`                      |
+| 5: Dependency cycle                     | tested     | Domain-level in `graph.test.ts`                              |
+| 6: Deadline becomes infeasible          | notStarted | —                                                            |
+| 7: Provider timeout after side effect   | notStarted | —                                                            |
+| 8: Duplicate request / idempotency      | tested     | Persistence-level in `execution-store.test.ts`               |
+| 9: Persistence failure after success    | tested     | Persistence-level in `recovery.test.ts`                      |
+| 10: Bedrock malformed response          | notStarted | —                                                            |
+| 11: MCP protocol smoke test             | notStarted | —                                                            |
+| 12: Replanning preserves completed work | tested     | `tests/replanning/replan-service.test.ts` ("completed work") |
+| 13: Trace completeness                  | notStarted | —                                                            |
+| 14: Simulator/live separation           | notStarted | —                                                            |
+| 15: Baseline benchmark integrity        | notStarted | —                                                            |

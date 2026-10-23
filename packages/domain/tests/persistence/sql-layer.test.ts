@@ -253,6 +253,7 @@ describe("migrations", () => {
     "plans",
     "actions",
     "action_transitions",
+    "action_schedule_revisions",
     "approvals",
     "approval_consumptions",
     "evidence",
@@ -262,12 +263,12 @@ describe("migrations", () => {
 
   it("creates the full schema on a fresh database and records the migration", () => {
     const store = openStore();
-    expect(store.migration.appliedVersions).toEqual([1]);
+    expect(store.migration.appliedVersions).toEqual([1, 2]);
     expect(store.migration.currentVersion).toBe(LATEST_SCHEMA_VERSION);
-    expect(store.schemaVersion()).toBe(1);
+    expect(store.schemaVersion()).toBe(LATEST_SCHEMA_VERSION);
     expect(store.ping()).toBe(true);
     store.close();
-    expect(MIGRATIONS.map((m) => m.version)).toEqual([1]);
+    expect(MIGRATIONS.map((m) => m.version)).toEqual([1, 2]);
   });
 
   it("creates every table", () => {
@@ -290,7 +291,7 @@ describe("migrations", () => {
       first.close();
       const second = openStore(temp.file("idem.db"));
       expect(second.migration.appliedVersions).toEqual([]);
-      expect(second.migration.currentVersion).toBe(1);
+      expect(second.migration.currentVersion).toBe(LATEST_SCHEMA_VERSION);
       expect(second.commitments.get("commitment_report_delivery")).not.toBeNull();
       second.close();
     });

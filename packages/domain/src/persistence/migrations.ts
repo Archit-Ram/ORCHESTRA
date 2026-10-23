@@ -194,8 +194,36 @@ BEGIN SELECT RAISE(ABORT, 'executions: identity is immutable and a finished exec
 ${noDelete("executions")}
 `;
 
+/**
+ * Version 2: an append-only record of schedule revisions. Replanning (Algorithm
+ * H) can change an unstarted action's duration or time bounds; the action's
+ * own version still advances by one, and this table keeps what changed. It is
+ * additive: no existing table or trigger is touched.
+ */
+const SCHEMA_V2 = `
+CREATE TABLE action_schedule_revisions (
+  revision_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  action_id TEXT NOT NULL REFERENCES actions(action_id),
+  from_version INTEGER NOT NULL,
+  to_version INTEGER NOT NULL,
+  from_estimated_duration_minutes INTEGER NOT NULL,
+  to_estimated_duration_minutes INTEGER NOT NULL,
+  from_earliest_start_at TEXT,
+  to_earliest_start_at TEXT,
+  from_deadline_at TEXT,
+  to_deadline_at TEXT,
+  occurred_at TEXT NOT NULL,
+  correlation_id TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  UNIQUE (action_id, to_version)
+) STRICT;
+CREATE INDEX action_schedule_revisions_by_action ON action_schedule_revisions(action_id, to_version);
+${appendOnly("action_schedule_revisions")}
+`;
+
 export const MIGRATIONS: readonly Migration[] = [
   { version: 1, name: "initial schema", sql: SCHEMA_V1 },
+  { version: 2, name: "action schedule revisions", sql: SCHEMA_V2 },
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1]?.version ?? 0;

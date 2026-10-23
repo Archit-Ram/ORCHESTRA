@@ -1,3 +1,4 @@
+import { DomainError } from "../errors/domain-error.js";
 import { plannedActionSchema, type PlannedAction } from "../schemas/action.js";
 import type { ActionStatus, ApprovalStatus } from "../schemas/enums.js";
 import { assertActionTransition } from "../schemas/transitions.js";
@@ -6,6 +7,8 @@ import type {
   ActionChange,
   ActionChangeKind,
   ActionRepository,
+  ActionScheduleRevision,
+  ActionScheduleRevisionRecord,
   ActionTransitionRecord,
   WriteMeta,
 } from "./repositories.js";
@@ -21,6 +24,9 @@ import {
 } from "./row-helpers.js";
 import type { SqlDatabase, SqlRow } from "./sql-database.js";
 import type { TransactionManager } from "./transaction.js";
+
+/** Statuses in which an action has not started and may still be rescheduled. */
+const RESCHEDULABLE_STATUSES: readonly ActionStatus[] = ["proposed", "ready", "awaitingApproval"];
 
 export class SqliteActionRepository implements ActionRepository {
   constructor(
@@ -172,6 +178,107 @@ export class SqliteActionRepository implements ActionRepository {
         toApprovalStatus: text(row, "to_approval_status") as ApprovalStatus,
         fromVersion: integerOrNull(row, "from_version"),
         toVersion: integer(row, "to_version"),
+        occurredAt: text(row, "occurred_at"),
+        correlationId: text(row, "correlation_id"),
+        reason: text(row, "reason"),
+      }));
+  }
+
+  reviseSchedule(change: ActionScheduleRevision): PlannedAction {
+    return this.transactions.run(() => {
+      const current = this.require(change.actionId);
+      if (current.version !== change.expectedVersion) {
+        throw conflict("action", {
+          actionId: change.actionId,
+          expectedVersion: change.expectedVersion,
+          actualVersion: current.version,
+        });
+      }
+      if (!RESCHEDULABLE_STATUSES.includes(current.status)) {
+        throw new DomainError({
+          code: "ACTION_STATE_CONFLICT",
+          userMessage: "Only an action that has not started can be rescheduled.",
+          metadata: { actionId: current.actionId, status: current.status },
+        });
+      }
+      const estimatedDurationMinutes =
+        change.estimatedDurationMinutes ?? current.estimatedDurationMinutes;
+      const earliestStartAt =
+        change.earliestStartAt === undefined ? current.earliestStartAt : change.earliestStartAt;
+      const deadlineAt = change.deadlineAt === undefined ? current.deadlineAt : change.deadlineAt;
+      if (
+        estimatedDurationMinutes === current.estimatedDurationMinutes &&
+        earliestStartAt === current.earliestStartAt &&
+        deadlineAt === current.deadlineAt
+      ) {
+        throw invalid("action", "the revision would not alter the action");
+      }
+      const next = parseOrThrow(
+        plannedActionSchema,
+        {
+          ...current,
+          estimatedDurationMinutes,
+          earliestStartAt,
+          deadlineAt,
+          version: current.version + 1,
+          updatedAt: change.at,
+        },
+        "persistence.actions.reviseSchedule",
+      );
+      const result = this.database
+        .prepare(
+          "UPDATE actions SET version = ?, updated_at = ?, body = ? WHERE action_id = ? AND version = ?",
+        )
+        .run(
+          next.version,
+          next.updatedAt,
+          JSON.stringify(next),
+          next.actionId,
+          change.expectedVersion,
+        );
+      if (result.changes !== 1) {
+        throw conflict("action", {
+          actionId: change.actionId,
+          expectedVersion: change.expectedVersion,
+        });
+      }
+      this.database
+        .prepare(
+          "INSERT INTO action_schedule_revisions (action_id, from_version, to_version, from_estimated_duration_minutes, to_estimated_duration_minutes, from_earliest_start_at, to_earliest_start_at, from_deadline_at, to_deadline_at, occurred_at, correlation_id, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .run(
+          next.actionId,
+          current.version,
+          next.version,
+          current.estimatedDurationMinutes,
+          next.estimatedDurationMinutes,
+          current.earliestStartAt,
+          next.earliestStartAt,
+          current.deadlineAt,
+          next.deadlineAt,
+          change.at,
+          change.correlationId,
+          change.reason,
+        );
+      return next;
+    });
+  }
+
+  getScheduleRevisions(actionId: string): ActionScheduleRevisionRecord[] {
+    return this.database
+      .prepare("SELECT * FROM action_schedule_revisions WHERE action_id = ? ORDER BY to_version")
+      .all(actionId)
+      .map((row) => ({
+        revisionId: integer(row, "revision_id"),
+        actionId: text(row, "action_id"),
+        fromVersion: integer(row, "from_version"),
+        toVersion: integer(row, "to_version"),
+        fromEstimatedDurationMinutes: integer(row, "from_estimated_duration_minutes"),
+        toEstimatedDurationMinutes: integer(row, "to_estimated_duration_minutes"),
+        fromEarliestStartAt: textOrNull(row, "from_earliest_start_at"),
+        toEarliestStartAt: textOrNull(row, "to_earliest_start_at"),
+        fromDeadlineAt: textOrNull(row, "from_deadline_at"),
+        toDeadlineAt: textOrNull(row, "to_deadline_at"),
         occurredAt: text(row, "occurred_at"),
         correlationId: text(row, "correlation_id"),
         reason: text(row, "reason"),
