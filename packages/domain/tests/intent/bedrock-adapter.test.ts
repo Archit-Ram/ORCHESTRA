@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type {
-  BedrockRuntimeClient,
-  ConverseCommand,
-  ConverseCommandOutput,
-} from "@aws-sdk/client-bedrock-runtime";
+import type { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import { DomainError } from "../../src/errors/domain-error.js";
 import {
   BedrockIntentAdapter,
@@ -12,7 +8,7 @@ import {
 } from "../../src/intent/bedrock-adapter.js";
 
 function createMockClient(
-  handler: (command: ConverseCommand) => Promise<ConverseCommandOutput>,
+  handler: (command: ConverseCommand) => Promise<unknown>,
 ): BedrockRuntimeClient {
   return {
     send: vi.fn().mockImplementation(handler),

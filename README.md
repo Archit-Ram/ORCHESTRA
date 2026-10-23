@@ -20,20 +20,24 @@ Every email, document and calendar action runs through a **simulator adapter**. 
 
 Web studio UI, structured-log redaction suite and trace-by-correlation CLI, baseline benchmark, full fault-injection and security-hardening passes, Playwright end-to-end tests, live Gmail/Calendar. Invariants are stored per plan, but there is no tool to edit them.
 
-### Run it
+### Quick start (needs Node 22+ and pnpm 9+)
 
 ```bash
+git clone https://github.com/Archit-Ram/ORCHESTRA.git
+cd ORCHESTRA
 pnpm install
-pnpm --filter @orchestra/mcp-server add -E @modelcontextprotocol/sdk   # pins the SDK; required once
-pnpm install && pnpm build
-export MCP_AUTH_TOKEN="$(openssl rand -hex 24)"
-pnpm --filter @orchestra/mcp-server start        # listens on 127.0.0.1:3002
-pnpm smoke:mcp                                    # real MCP client against a throwaway server
+pnpm demo        # builds, starts a real MCP server in-process, and walks the whole scenario with a real MCP client
+pnpm start:mcp   # builds and starts the server on http://127.0.0.1:3002/mcp (generates an auth token and prints it)
 ```
 
-Connect any MCP client to `http://127.0.0.1:3002/mcp` with header `Authorization: Bearer $MCP_AUTH_TOKEN`. Optional: `BEDROCK_MODEL_ID`, `AWS_REGION`, `ORCHESTRA_DB_PATH`, `MCP_PORT`, `MCP_ALLOWED_ORIGINS`.
+- The first `pnpm demo` / `pnpm start:mcp` on a fresh checkout adds the pinned MCP SDK once (`scripts/ensure-sdk.mjs`); commit `services/mcp-server/package.json` and `pnpm-lock.yaml` afterwards and it never runs again.
+- `pnpm verify:all` runs format, lint, typecheck, unit tests and the MCP smoke test.
+- Connect your own client to `/mcp` with `Authorization: Bearer <token>`; for example `npx @modelcontextprotocol/inspector` (Streamable HTTP).
+- Optional environment: `BEDROCK_MODEL_ID`, `AWS_REGION` (credentials come from the standard AWS chain), `MCP_AUTH_TOKEN`, `MCP_PORT`, `MCP_HOST`, `MCP_ALLOWED_ORIGINS`, `ORCHESTRA_DB_PATH`.
 
 ### Demo script (simulator)
+
+`pnpm demo` runs exactly this, with checks. By hand:
 
 1. `createCommitment {"scenario":"demoReport"}` returns a plan: finalize a report, then send it, with a meeting window in which sending is prohibited and a deadline.
 2. `verifyExecutionPlan` shows the verification result; `buildExecutionPlan` shows the schedule and risk.

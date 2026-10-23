@@ -175,6 +175,27 @@ export function refreshCommitmentStatus(
       return { ...base, status: commitment.status, changed: false, refusedTransition: null };
     }
     if (!canTransitionCommitment(commitment.status, decision.status)) {
+      if (
+        commitment.status === "blocked" &&
+        canTransitionCommitment("blocked", "open") &&
+        canTransitionCommitment("open", decision.status)
+      ) {
+        store.commitments.update(
+          { ...commitment, status: "open", updatedAt: now, version: commitment.version + 1 },
+          commitment.version,
+        );
+        const intermediate = store.commitments.require(commitmentId);
+        store.commitments.update(
+          {
+            ...intermediate,
+            status: decision.status,
+            updatedAt: now,
+            version: intermediate.version + 1,
+          },
+          intermediate.version,
+        );
+        return { ...base, status: decision.status, changed: true, refusedTransition: null };
+      }
       return {
         ...base,
         status: commitment.status,

@@ -49,7 +49,8 @@ describe("MCP server over Streamable HTTP", () => {
 
     const verified = await call(client, "verifyExecutionPlan", { planId });
     expect(verified.success).toBe(true);
-    expect(verified.data?.["verification"].isValid).toBe(true);
+    const verifiedData = verified.data as { verification: { isValid: boolean } } | undefined;
+    expect(verifiedData?.verification.isValid).toBe(true);
     await client.close();
   });
 

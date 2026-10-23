@@ -20,7 +20,11 @@
     "build": "pnpm -r run build",
     "validate:env": "tsx scripts/validate-env.ts",
     "clean": "pnpm -r run clean",
-    "smoke:mcp": "tsx scripts/mcp-smoke.ts"
+    "smoke:mcp": "node scripts/ensure-sdk.mjs && pnpm build && tsx scripts/mcp-smoke.ts",
+    "setup:mcp": "node scripts/ensure-sdk.mjs",
+    "demo": "node scripts/ensure-sdk.mjs && pnpm build && tsx scripts/demo.ts",
+    "start:mcp": "node scripts/ensure-sdk.mjs && pnpm build && tsx scripts/start.ts",
+    "verify:all": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:unit && pnpm smoke:mcp"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
