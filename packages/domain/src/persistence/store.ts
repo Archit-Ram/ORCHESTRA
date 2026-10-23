@@ -10,6 +10,7 @@ import { SqliteApprovalRepository } from "./approval-repository.js";
 import { SqliteCommitmentRepository } from "./commitment-repository.js";
 import { SqliteEventLedger } from "./event-ledger.js";
 import { SqliteEvidenceRepository } from "./evidence-repository.js";
+import { SqlitePlanInvariantRepository } from "./invariant-repository.js";
 import { SqliteExecutionRepository } from "./execution-repository.js";
 import { LATEST_SCHEMA_VERSION, migrate, type MigrationResult } from "./migrations.js";
 import { SqlitePlanRepository } from "./plan-repository.js";
@@ -47,6 +48,7 @@ export class SqliteStore {
   readonly evidence: SqliteEvidenceRepository;
   readonly events: SqliteEventLedger;
   readonly executions: SqliteExecutionRepository;
+  readonly invariants: SqlitePlanInvariantRepository;
   readonly migration: MigrationResult;
   private readonly transactions: TransactionManager;
 
@@ -62,6 +64,7 @@ export class SqliteStore {
     this.evidence = new SqliteEvidenceRepository(database);
     this.events = new SqliteEventLedger(database, this.transactions);
     this.executions = new SqliteExecutionRepository(database, this.transactions);
+    this.invariants = new SqlitePlanInvariantRepository(database, this.transactions);
     this.migration = migration;
   }
 

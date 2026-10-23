@@ -1,7 +1,7 @@
 # ORCHESTRA — Implementation Status
 
-> **Last updated:** 2026-10-23T11:15:00Z
-> **Phase:** Prompt 9 — Minimal-Impact Replanning Complete and Tested
+> **Last updated:** 2026-10-23T11:45:00Z
+> **Phase:** Final Submission — MCP Server, Evidence-Based Commitment Status, and Algorithm H Complete and Tested
 
 All requirements from the Engineering Specification are tracked below.
 Status values: `notStarted` | `inProgress` | `implemented` | `tested` | `blocked`
@@ -33,18 +33,18 @@ Status values: `notStarted` | `inProgress` | `implemented` | `tested` | `blocked
 | F: Policy & approval enforcement        | tested     | `packages/domain/src/policy/`                                   | `pnpm test:unit` |
 | G: Failure-aware action execution       | tested     | `packages/domain/src/execution/`                                | `pnpm test:unit` |
 | H: Minimal-impact replanning            | tested     | `packages/domain/src/replanning/`; tests in `tests/replanning/` | `pnpm test:unit` |
-| I: Evidence-based commitment status     | notStarted | —                                                               | —                |
+| I: Evidence-based commitment status     | tested     | `packages/domain/src/evidence/`; tests in `tests/evidence/`     | `pnpm test:unit` |
 | J: Baseline benchmark                   | notStarted | —                                                               | —                |
 
 ## 3. MCP Server & Adapters (Section 6)
 
-| Requirement                                    | Status     | Evidence                                             | Test Command     |
-| ---------------------------------------------- | ---------- | ---------------------------------------------------- | ---------------- |
-| MCP server (Streamable HTTP, spec ≥2025-11-25) | notStarted | —                                                    | —                |
-| MCP tool schemas (9 tools)                     | notStarted | —                                                    | —                |
-| Adapter registry                               | tested     | `packages/domain/src/execution/adapter-registry.ts`  | `pnpm test:unit` |
-| Simulator adapter (labelled)                   | tested     | `packages/domain/src/execution/simulator-adapter.ts` | `pnpm test:unit` |
-| AWS Bedrock integration (real)                 | tested     | `packages/domain/src/intent/bedrock-adapter.ts`      | `pnpm test:unit` |
+| Requirement                                    | Status | Evidence                                                      | Test Command                        |
+| ---------------------------------------------- | ------ | ------------------------------------------------------------- | ----------------------------------- |
+| MCP server (Streamable HTTP, spec ≥2025-11-25) | tested | `services/mcp-server/`; tests in `services/mcp-server/tests/` | `pnpm test:unit` & `pnpm smoke:mcp` |
+| MCP tool schemas (9 tools)                     | tested | `services/mcp-server/src/tools.ts`                            | `pnpm test:unit` & `pnpm smoke:mcp` |
+| Adapter registry                               | tested | `packages/domain/src/execution/adapter-registry.ts`           | `pnpm test:unit`                    |
+| Simulator adapter (labelled)                   | tested | `packages/domain/src/execution/simulator-adapter.ts`          | `pnpm test:unit`                    |
+| AWS Bedrock integration (real)                 | tested | `packages/domain/src/intent/bedrock-adapter.ts`               | `pnpm test:unit`                    |
 
 ## 4. Logging & Diagnostics (Section 7)
 
@@ -135,7 +135,7 @@ Status values: `notStarted` | `inProgress` | `implemented` | `tested` | `blocked
 | 8: Duplicate request / idempotency      | tested     | Persistence-level in `execution-store.test.ts`               |
 | 9: Persistence failure after success    | tested     | Persistence-level in `recovery.test.ts`                      |
 | 10: Bedrock malformed response          | notStarted | —                                                            |
-| 11: MCP protocol smoke test             | notStarted | —                                                            |
+| 11: MCP protocol smoke test             | tested     | `scripts/mcp-smoke.ts`, `services/mcp-server/tests/`         |
 | 12: Replanning preserves completed work | tested     | `tests/replanning/replan-service.test.ts` ("completed work") |
 | 13: Trace completeness                  | notStarted | —                                                            |
 | 14: Simulator/live separation           | notStarted | —                                                            |

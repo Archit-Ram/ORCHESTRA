@@ -1,3 +1,4 @@
+export * from "./invariant-repository.js";
 export * from "./migrations.js";
 export * from "./repositories.js";
 export * from "./sql-database.js";

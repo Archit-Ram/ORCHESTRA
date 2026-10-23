@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Promise-Aware Personal AI — Amazon Developer Hackathon 2026, Alexa+ Track",
+  "description": "Promise-Aware Personal AI \u2014 Amazon Developer Hackathon 2026, Alexa+ Track",
   "author": "Archit-Ram",
   "license": "MIT",
   "engines": {
@@ -19,7 +19,8 @@
     "test:unit": "vitest run",
     "build": "pnpm -r run build",
     "validate:env": "tsx scripts/validate-env.ts",
-    "clean": "pnpm -r run clean"
+    "clean": "pnpm -r run clean",
+    "smoke:mcp": "tsx scripts/mcp-smoke.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

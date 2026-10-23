@@ -254,6 +254,7 @@ describe("migrations", () => {
     "actions",
     "action_transitions",
     "action_schedule_revisions",
+    "plan_invariants",
     "approvals",
     "approval_consumptions",
     "evidence",
@@ -263,12 +264,12 @@ describe("migrations", () => {
 
   it("creates the full schema on a fresh database and records the migration", () => {
     const store = openStore();
-    expect(store.migration.appliedVersions).toEqual([1, 2]);
+    expect(store.migration.appliedVersions).toEqual([1, 2, 3]);
     expect(store.migration.currentVersion).toBe(LATEST_SCHEMA_VERSION);
     expect(store.schemaVersion()).toBe(LATEST_SCHEMA_VERSION);
     expect(store.ping()).toBe(true);
     store.close();
-    expect(MIGRATIONS.map((m) => m.version)).toEqual([1, 2]);
+    expect(MIGRATIONS.map((m) => m.version)).toEqual([1, 2, 3]);
   });
 
   it("creates every table", () => {

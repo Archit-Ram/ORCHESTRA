@@ -221,9 +221,25 @@ CREATE INDEX action_schedule_revisions_by_action ON action_schedule_revisions(ac
 ${appendOnly("action_schedule_revisions")}
 `;
 
+/**
+ * Version 3: the invariants (hard rules) of a plan. They were only held by the
+ * caller until now; a verifier run after a restart must see the same rules.
+ * Additive; rows are replaced as a set per plan, so a changed protected window
+ * from replanning is stored the same way.
+ */
+const SCHEMA_V3 = `
+CREATE TABLE plan_invariants (
+  plan_id TEXT NOT NULL,
+  invariant_id TEXT NOT NULL,
+  body TEXT NOT NULL,
+  PRIMARY KEY (plan_id, invariant_id)
+) STRICT;
+`;
+
 export const MIGRATIONS: readonly Migration[] = [
   { version: 1, name: "initial schema", sql: SCHEMA_V1 },
   { version: 2, name: "action schedule revisions", sql: SCHEMA_V2 },
+  { version: 3, name: "plan invariants", sql: SCHEMA_V3 },
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1]?.version ?? 0;

@@ -43,3 +43,6 @@ blob-report/
 # Temporary
 tmp/
 temp/
+
+# Local demo database
+data/

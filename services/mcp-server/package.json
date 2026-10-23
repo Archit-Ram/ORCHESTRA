@@ -1,0 +1,17 @@
+{
+  "name": "@orchestra/mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "dev": "tsx src/main.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@orchestra/domain": "workspace:*",
+    "zod": "3.25.76"
+  }
+}

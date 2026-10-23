@@ -59,7 +59,11 @@ export default tseslint.config(
     },
   },
   {
-    files: ["packages/domain/src/schemas/**/*.ts"],
+    files: [
+      "packages/domain/src/schemas/**/*.ts",
+      "packages/domain/src/service/**/*.ts",
+      "services/mcp-server/**/*.ts",
+    ],
     rules: {
       "@typescript-eslint/explicit-function-return-type": "off",
     },

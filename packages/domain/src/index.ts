@@ -18,3 +18,5 @@ export * from "./persistence/index.js";
 export * from "./execution/index.js";
 export * from "./intent/index.js";
 export * from "./replanning/index.js";
+export * from "./evidence/index.js";
+export * from "./service/index.js";

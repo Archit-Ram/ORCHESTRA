@@ -124,7 +124,7 @@ describe("migration 2", () => {
       database.close();
 
       const store = openStore(path);
-      expect(store.migration.appliedVersions).toEqual([2]);
+      expect(store.migration.appliedVersions).toEqual([2, 3]);
       seedScenario(store);
       store.actions.reviseSchedule(revision(1, { estimatedDurationMinutes: 20 }));
       store.close();
